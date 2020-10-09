@@ -1,16 +1,19 @@
-import zcrmsdk as zoho_crm
-import requests
-from flask import Flask, request, Response
 import json
+import random
+import requests
+
+import zcrmsdk as zoho_crm
+from flask import Flask, request, Response
+
 
 # TODO: make following data configurable on script startup (passed as arguments)
-ZOHO_LOGIN_EMAIL = "demoanalytics777@gmail.com"
-ZOHO_GRANT_TOKEN = "1000.4003c3678b3ea6157057c61cbf64d3a3.2134078cd54060fd08412a1d05a51a91"
-ZOHO_CLIENT_ID = "1000.HF3BYQ7UHO60AEAK46Q3N15A6LHG6M"
-ZOHO_CLIENT_SECRET = "76071584fe3d9dcda841eaede6150fb35c1f836838"
+ZOHO_LOGIN_EMAIL = "bear.victor28@gmail.com"
+ZOHO_GRANT_TOKEN = "1000.ba356065855a909c02543700807d5065.312087b477ec73c1413741a1ad14ef03"
+ZOHO_CLIENT_ID = "1000.IUOYW5741V7EA7IAV47NGSTUZKJRKU"
+ZOHO_CLIENT_SECRET = "968c27e883b1c808b3674b7d1a0cb528b92af99cb6"
 
+ZOHO_API_URI = "https://www.zohoapis.eu"
 
-ZOHO_API_URI = "https://www.zohoapis.com"
 DEALS_ENDPOINT = "/crm/v2/Deals"
 ENABLE_NOTIFICATIONS_ENDPOINT = "/crm/v2/actions/watch"
 ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
@@ -19,12 +22,12 @@ GOOGLE_ANALYTICS_COLLECT_ENDPOINT = "/collect"
 
 config = {
     "apiBaseUrl": ZOHO_API_URI,
-    "token_persistence_path": "/Users/irynamykytyn/PycharmProjects/zoho_crm_test",
+    "token_persistence_path": "D:/GIT_PROJECTs/ga_zoho_integration",
     "currentUserEmail": ZOHO_LOGIN_EMAIL,
     "client_id": ZOHO_CLIENT_ID,
     "client_secret": ZOHO_CLIENT_SECRET,
     "redirect_uri": "coxit.co",
-    "accounts_url": "https://accounts.zoho.com",
+    "accounts_url": "https://accounts.zoho.eu",
 }
 
 request_input_json = {
@@ -35,7 +38,7 @@ request_input_json = {
                 "Deals.edit"
             ],
             "token": "TOKEN_FOR_VERIFICATION_OF_1000000068002",
-            "notify_url": "http://30368f120db5.ngrok.io" + ZOHO_NOTIFICATIONS_ENDPOINT,
+            "notify_url": "http://f2d4701a51c9.ngrok.io" + ZOHO_NOTIFICATIONS_ENDPOINT,
         }
     ]
 }
@@ -43,10 +46,13 @@ request_input_json = {
 zoho_crm.ZCRMRestClient.initialize(config)
 oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
 
-# oauth_tokens = oauth_client.generate_access_token(ZOHO_GRANT_TOKEN)
-# access_token = oauth_tokens.get_access_token()
+#first time start
+#oauth_tokens = oauth_client.generate_access_token(ZOHO_GRANT_TOKEN)
+#access_token = oauth_tokens.get_access_token()
 
+#second time start
 access_token = oauth_client.get_access_token(ZOHO_LOGIN_EMAIL)
+
 app = Flask(__name__)
 
 
@@ -61,9 +67,13 @@ def respond():
         id_str = id
         response = requests.get(url=ZOHO_API_URI + "/crm/v2/" + module + "/" + id_str, headers=auth_header)
         if response.status_code == 200:
+
             current_stage = response.json()["data"][0]["Stage"]
-            current_google_id = response.json()["data"][0]["GA_client_id"]
             print("id=" + id_str + ": current stage is " + current_stage)
+            current_google_id = response.json()["data"][0]["id"]
+            cookieId="GA1.1."+str(random.randint(1000000000,10000000000))+"."+str(random.randint(1000000000,10000000000))
+            print(cookieId)
+
 
             # TODO:
             # Get record from DB and compare stages, if stage changed then make POST request to analytic
@@ -71,18 +81,20 @@ def respond():
             PARAMS = {
                 "v": "1",
                 "t": "event",
-                "tid": "UA-178036986-1",
-                "cid": current_google_id,
+                "tid": "UA-179961291-2",
+                "cid": cookieId,#"GA1.1.1467240959.1602069460",
+                #"uid": current_google_id,
                 "ec": "zoho_stage_change",
                 "ea": "stage_change",
                 "el": current_stage,
                 "ua": "Opera / 9.80"
             }
 
+            
             # ?v=1&t=event&tid=UA-178036986-1&cid=93616860.1600348789&ec=zoho_stage_change&ea=stage_change&el=negotiation
             response = requests.post(url=GOOGLE_ANALYTICS_API_URI + GOOGLE_ANALYTICS_COLLECT_ENDPOINT, params=PARAMS)
             if response.status_code == 200:
-                print "Update succesfully send to Google Analytic"
+                print ("Update succesfully send to Google Analytic")
 
     return Response(status=200)
 
