@@ -43,6 +43,52 @@ request_input_json = {
     ]
 }
 
+def compare_change_in_data(old_data,new_data):
+    """compare old stages and new stage.
+       Return false if stage isnt chabge,
+    """
+    flag=False
+    for key,value in old_data.items():
+        print(key,value,new_data.keys(),new_data.values())
+        if new_data.keys()[0] == key:
+            if new_data.values()[0] != value:
+                print(key,value,new_data.keys())
+                flag=True
+                break
+            else:
+                flag=False
+                break
+        else:
+            print(key,value,new_data.keys())
+            print("Add to json file return true")
+            flag=True
+
+    return flag
+
+
+def DB_save_stage_info(new_data):
+    """Save and compare data about stage in json file"""
+    flag=True
+    try:
+        with open("data_file.json", "r") as read_file:
+            old_data=json.load(read_file)
+
+        if compare_change_in_data(old_data,new_data):
+            old_data.update(new_data)
+        else:
+            flag=False
+
+        with open("data_file.json", "w") as write_file:
+            json.dump(old_data, write_file)
+
+    except IOError :
+        print("this&*")
+        with open("data_file.json", "w") as write_file:
+            json.dump(new_data, write_file)
+
+    return flag
+
+
 zoho_crm.ZCRMRestClient.initialize(config)
 oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
 
@@ -72,11 +118,6 @@ def respond():
             print("id=" + id_str + ": current stage is " + current_stage)
             current_google_id = response.json()["data"][0]["id"]
             cookieId="GA1.1."+str(random.randint(1000000000,10000000000))+"."+str(random.randint(1000000000,10000000000))
-            print(cookieId)
-
-
-            # TODO:
-            # Get record from DB and compare stages, if stage changed then make POST request to analytic
 
             PARAMS = {
                 "v": "1",
@@ -90,11 +131,17 @@ def respond():
                 "ua": "Opera / 9.80"
             }
 
-            
-            # ?v=1&t=event&tid=UA-178036986-1&cid=93616860.1600348789&ec=zoho_stage_change&ea=stage_change&el=negotiation
-            response = requests.post(url=GOOGLE_ANALYTICS_API_URI + GOOGLE_ANALYTICS_COLLECT_ENDPOINT, params=PARAMS)
-            if response.status_code == 200:
-                print ("Update succesfully send to Google Analytic")
+            # TODO:
+            # Get record from DB and compare stages, if stage changed then make POST request to analytic
+
+            data_stage={current_google_id:current_stage}
+
+            if DB_save_stage_info(data_stage):
+                # ?v=1&t=event&tid=UA-178036986-1&cid=93616860.1600348789&ec=zoho_stage_change&ea=stage_change&el=negotiation
+                response = requests.post(url=GOOGLE_ANALYTICS_API_URI + GOOGLE_ANALYTICS_COLLECT_ENDPOINT, params=PARAMS)
+                if response.status_code == 200:
+                    print ("Update succesfully send to Google Analytic")
+
 
     return Response(status=200)
 
