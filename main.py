@@ -1,17 +1,15 @@
 import json
-import zcrmsdk as zoho_crm
-import requests
-from flask import Flask, request, Response
-from pyga.entities import Visitor
 import logging
+from logging.config import dictConfig
 from os import path
+from flask import Flask, request, Response
+import requests
+import config
+import zcrmsdk as zoho_crm
+from pyga.entities import Visitor
 
+dictConfig(config.logging_config)
 logger = logging.getLogger()
-log_console_format = "[%(levelname)s] - Line: %(lineno)d - %(name)s - : %(message)s."
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.ERROR)
-console_handler.setFormatter(logging.Formatter(log_console_format))
-logger.addHandler(console_handler)
 
 # TODO: make following data configurable on script startup (passed as arguments)
 ZOHO_LOGIN_EMAIL = "yehorzhornovyi@gmail.com"
@@ -51,18 +49,11 @@ request_input_json = {
 app = Flask(__name__)
 
 def get_access_token():
-    access_token = None
     if path.isfile(config['token_persistence_path'] + 'zcrm_oauthtokens.pkl'):
-        try:
-            access_token = oauth_client.get_access_token(ZOHO_LOGIN_EMAIL)
-        except Exception as e:
-            logger.error(e)
+        access_token = oauth_client.get_access_token(ZOHO_LOGIN_EMAIL)
     else:
-        try:
-            oauth_tokens = oauth_client.generate_access_token(ZOHO_GRANT_TOKEN)
-            access_token = oauth_tokens.get_access_token()
-        except Exception as ex :
-            logger.error(ex)
+        oauth_tokens = oauth_client.generate_access_token(ZOHO_GRANT_TOKEN)
+        access_token = oauth_tokens.get_access_token()
     return access_token
 
 @app.route(ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
@@ -70,18 +61,17 @@ def respond():
     # get deals records
     auth_header = {"Authorization": "Zoho-oauthtoken " + access_token}
     module = request.json["module"]
-    for i in request.json["ids"]:
-        id_str = i
-
+    for id_str in request.json["ids"]:
         resp = requests.get(url=ZOHO_API_URL + "/crm/v2/" + module + "/" + id_str,
-                                headers=auth_header)
+                            headers=auth_header)
         if resp.status_code == 200:
             current_stage = resp.json()["data"][0]["Stage"]
-            print("id=" + id_str + ": current stage is " + current_stage)
+            logger.info("id=" + id_str + ": current stage is " + current_stage)
 
             # TODO:Get record from DB and compare stages,
             #  if stage changed then make POST request to analytic
             user = Visitor()
+
             params = {
                 "v": "1",
                 "t": "event",
@@ -94,9 +84,9 @@ def respond():
             }
 
             resp = requests.post(url=GOOGLE_ANALYTICS_API_URL+GOOGLE_ANALYTICS_COLLECT_ENDPOINT,
-                                     params=params)
+                                 params=params)
             if resp.status_code == 200:
-                print ("Update succesfully send to Google Analytic")
+                logger.info("Update succesfully send to Google Analytic")
         else:
             logger.error("The application can not get access to Zoho. Check the access token")
 
@@ -107,14 +97,18 @@ if __name__ == '__main__':
     zoho_crm.ZCRMRestClient.initialize(config)
     oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
     # Enable Zoho Notifications
-    access_token = get_access_token()
+    access_token = None
+    try:
+        access_token = get_access_token()
+    except Exception as e:
+        logger.error(e)
 
     if access_token:
         header = {"Authorization": "Zoho-oauthtoken " + access_token,
                   'Content-type': 'application/json'}
         resp = requests.post(url=ZOHO_API_URL + ENABLE_NOTIFICATIONS_ENDPOINT, headers=header,
-                          data=json.dumps(request_input_json))
+                             data=json.dumps(request_input_json))
         if not resp:
-            logger.error("Most likely you defined the wrong scopes generating the grant token! Enable Zoho Notifications API.")
+            logger.error("Can`t access to ZohoCRM. Check if grant token and domen is valid")
         else:
             app.run(host="127.0.0.1", port=5050)
