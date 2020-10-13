@@ -1,6 +1,5 @@
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import sys
-import random
 import argparse
 import json
 import requests
@@ -10,14 +9,14 @@ import zcrmsdk as zoho_crm
 from flask import Flask, request, Response
 
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
-_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN = "", "", "", ""
+_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _ZOHO_NOTIFY_URL, _GA_TID = "", "", "", "", "", ""
 
 
 def compare_change_in_data(old_data, new_data):
     """compare old stages and new stage. Return false if stage isnt change"""
     flag = False
     for key, value in old_data.items():
-        print key, value, new_data.keys(), new_data.values()
+        print "\n Old stage: ",key, value,"\n New stage: ", new_data.keys(), new_data.values()
         if new_data.keys()[0] == key:
             if new_data.values()[0] != value:
                 flag = True
@@ -48,9 +47,8 @@ def db_save_stage_info(new_data):
             json.dump(old_data, write_file)
 
     except IOError:
-        print "this&*"
-        with open("data_file.json", "w") as write_file:
-            json.dump(new_data, write_file)
+            with open("data_file.json", "w") as write_file:
+                json.dump(new_data, write_file)
 
     return flag
 
@@ -62,7 +60,9 @@ def create_parser():
     parser.add_argument('-gt', '--grant_token')
     parser.add_argument('-cid', '--client_id')
     parser.add_argument('-cs', '--client_secret')
-    parser.add_argument('-api', '--api_uri', default='eu')
+    parser.add_argument('-api', '--api_uri', default='com')
+    parser.add_argument('-nu', '--notify_url')
+    parser.add_argument('-tid', '--ga_tid')
 
     return parser
 
@@ -72,7 +72,7 @@ def initialize_variebles():
     arguments)"""
 
     # change global variebles
-    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI
+    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, _GA_TID
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -84,15 +84,17 @@ def initialize_variebles():
     _ZOHO_LOGIN_EMAIL = namespace.email
     _ZOHO_GRANT_TOKEN = namespace.grant_token
     _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
+    _ZOHO_NOTIFY_URL = namespace.notify_url
+    _GA_TID = namespace.ga_tid
 
     config = {
         "apiBaseUrl": _ZOHO_API_URI,
-        "token_persistence_path": "D:/GIT_PROJECTs/ga_zoho_integration",
+        "token_persistence_path": "./",
         "currentUserEmail": _ZOHO_LOGIN_EMAIL,
         "client_id": zoho_client_id,
         "client_secret": zoho_client_secret,
         "redirect_uri": "coxit.co",
-        "accounts_url": "https://accounts.zoho.eu",
+        "accounts_url": "https://accounts.zoho." + namespace.api_uri,
     }
 
     return config
@@ -125,6 +127,12 @@ def respond():
     module = request.json["module"]
     for ids in request.json["ids"]:
 
+        ga_response = requests.get(
+            url=_ZOHO_API_URI +
+            "/crm/v2/" +
+            "settings/variables",
+            headers=auth_header)
+
         response = requests.get(
             url=_ZOHO_API_URI +
             "/crm/v2/" +
@@ -132,41 +140,51 @@ def respond():
             "/" +
             ids,
             headers=auth_header)
-        if response.status_code == 200:
 
+        if response.status_code == 200:
             current_stage = response.json()["data"][0]["Stage"]
-            print "id=" + ids + ": current stage is " + current_stage
-            current_google_id = response.json()["data"][0]["id"]
-            cookie_id = "GA1.1." + str(random.randint(1000000000, 10000000000)) + \
-                "." + str(random.randint(1000000000, 10000000000))
-            print cookie_id
+            print("\n id=" + ids + ": current stage is " + current_stage)
+
+            if ga_response.json()[
+                    "variables"][0]["api_name"] == "GA_client_id":
+                print "\n GA_client_id is finding"
+                current_google_id = ga_response.json()["variables"][0]["value"]
+            else:
+                print "\n GA_client_id is not finding"
 
             params_for_ga = {
                 "v": "1",
                 "t": "event",
-                "tid": "UA-179961291-2",
-                "cid": cookie_id,  # "GA1.1.1467240959.1602069460",
-                # "uid": current_google_id,
+                "tid": _GA_TID,
+                "cid": current_google_id,
                 "ec": "zoho_stage_change",
                 "ea": "stage_change",
                 "el": current_stage,
                 "ua": "Opera / 9.80"
             }
-            data_stage = {current_google_id: current_stage}
+            data_stage = {response.json()["data"][0]["id"]: current_stage}
             if db_save_stage_info(data_stage):
                 response = requests.post(
                     url=google_analytics_api_uri +
                     google_analytics_collect_endpoint,
                     params=params_for_ga)
                 if response.status_code == 200:
-                    print "Update succesfully send to Google Analytic"
+                    print 50*"*","\n Update succesfully send to Google Analytic"
+        else:
+            print ("response.status_code = " +
+                   str(response.status_code) + " - " + response.text)
 
     return Response(status=200)
 
 
 def creat_requests():
-    """creating request using web huk"""
+    """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
+    notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
+    print "\nYour parameters:"
+    print ("notify_url: " + notify_url)
+    print ("_ZOHO_NOTIFY_URL: " + notify_url)
+    print ("_ZOHO_NOTIFICATIONS_ENDPOINT: " + _ZOHO_NOTIFICATIONS_ENDPOINT)
 
     request_input_json = {
         "watch": [
@@ -174,13 +192,13 @@ def creat_requests():
                 "channel_id": "1000000068002",
                 "events": ["Deals.edit"],
                 "token": "TOKEN_FOR_VERIFICATION_OF_1000000068002",
-                "notify_url": "http://9f2c50a0f875.ngrok.io" +
-                              _ZOHO_NOTIFICATIONS_ENDPOINT,
+                "notify_url": notify_url,
             }]}
 
     # Enable Zoho Notifications
     header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN,
               'Content-type': 'application/json'}
+    print ("Zoho-oauthtoken " + _ACCESS_TOKEN +"\n")
     requests.post(
         url=_ZOHO_API_URI +
         enable_notifications_endpoint,
