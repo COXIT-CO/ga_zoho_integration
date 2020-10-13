@@ -14,9 +14,7 @@ _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN = "", "", "",
 
 
 def compare_change_in_data(old_data, new_data):
-    """compare old stages and new stage.
-       Return false if stage isnt chaтge,
-    """
+    """compare old stages and new stage. Return false if stage isnt change"""
     flag = False
     for key, value in old_data.items():
         print key, value, new_data.keys(), new_data.values()
@@ -176,7 +174,7 @@ def creat_requests():
                 "channel_id": "1000000068002",
                 "events": ["Deals.edit"],
                 "token": "TOKEN_FOR_VERIFICATION_OF_1000000068002",
-                "notify_url": "http://6ba554ad50a5.ngrok.io" +
+                "notify_url": "http://9f2c50a0f875.ngrok.io" +
                               _ZOHO_NOTIFICATIONS_ENDPOINT,
             }]}
 
