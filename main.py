@@ -164,6 +164,8 @@ def respond():
 def creat_requests():
     """creating request using web huk"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
+    notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
+    print ("notify_url: " + notify_url)
 
     request_input_json = {
         "watch": [
@@ -171,13 +173,13 @@ def creat_requests():
                 "channel_id": "1000000068002",
                 "events": ["Deals.edit"],
                 "token": "TOKEN_FOR_VERIFICATION_OF_1000000068002",
-                "notify_url": _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT,
+                "notify_url": notify_url,
             }]}
 
     # Enable Zoho Notifications
     header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN,
               'Content-type': 'application/json'}
-    print ("Zoho-oauthtoken " + _ACCESS_TOKEN)
+    print ("Zoho-oauthtoken ")
     requests.post(
         url=_ZOHO_API_URI +
         enable_notifications_endpoint,
