@@ -1,6 +1,5 @@
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import sys
-import random
 import argparse
 import json
 import requests
@@ -10,7 +9,7 @@ import zcrmsdk as zoho_crm
 from flask import Flask, request, Response
 
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
-_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN = "", "", "", ""
+_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _ZOHO_NOTIFY_URL = "", "", "", "", ""
 
 
 def compare_change_in_data(old_data, new_data):
@@ -63,6 +62,7 @@ def create_parser():
     parser.add_argument('-cid', '--client_id')
     parser.add_argument('-cs', '--client_secret')
     parser.add_argument('-api', '--api_uri', default='eu')
+    parser.add_argument('-nu', '--notify_url')
 
     return parser
 
@@ -72,7 +72,7 @@ def initialize_variebles():
     arguments)"""
 
     # change global variebles
-    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI
+    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFICATIONS_ENDPOINT
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -84,10 +84,11 @@ def initialize_variebles():
     _ZOHO_LOGIN_EMAIL = namespace.email
     _ZOHO_GRANT_TOKEN = namespace.grant_token
     _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
+    _ZOHO_NOTIFICATIONS_ENDPOINT = namespace.notify_url
 
     config = {
         "apiBaseUrl": _ZOHO_API_URI,
-        "token_persistence_path": "D:/GIT_PROJECTs/ga_zoho_integration",
+        "token_persistence_path": "./",
         "currentUserEmail": _ZOHO_LOGIN_EMAIL,
         "client_id": zoho_client_id,
         "client_secret": zoho_client_secret,
@@ -136,17 +137,13 @@ def respond():
 
             current_stage = response.json()["data"][0]["Stage"]
             print "id=" + ids + ": current stage is " + current_stage
-            current_google_id = response.json()["data"][0]["id"]
-            cookie_id = "GA1.1." + str(random.randint(1000000000, 10000000000)) + \
-                "." + str(random.randint(1000000000, 10000000000))
-            print cookie_id
+            current_google_id = response.json()["data"][0]["GA_client_id"]
 
             params_for_ga = {
                 "v": "1",
                 "t": "event",
                 "tid": "UA-179961291-2",
-                "cid": cookie_id,  # "GA1.1.1467240959.1602069460",
-                # "uid": current_google_id,
+                "cid": current_google_id,
                 "ec": "zoho_stage_change",
                 "ea": "stage_change",
                 "el": current_stage,
