@@ -162,10 +162,12 @@ def respond():
 
 
 def creat_requests():
-    """creating request using web huk"""
+    """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
     print ("notify_url: " + notify_url)
+    print ("_ZOHO_NOTIFY_URL: " + notify_url)
+    print ("_ZOHO_NOTIFICATIONS_ENDPOINT: " + _ZOHO_NOTIFICATIONS_ENDPOINT)
 
     request_input_json = {
         "watch": [
