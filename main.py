@@ -9,7 +9,7 @@ import zcrmsdk as zoho_crm
 from flask import Flask, request, Response
 
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
-_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _ZOHO_NOTIFY_URL, _GA_TID = "", "", "", "", ""
+_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _ZOHO_NOTIFY_URL, _GA_TID = "", "", "", "", "", ""
 
 
 def compare_change_in_data(old_data, new_data):
