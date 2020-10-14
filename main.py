@@ -160,7 +160,7 @@ def respond():
                 if response.status_code == 200:
                     print "Update succesfully send to Google Analytic"
         else:
-            print ("response.status_code = " + response.status_code == 200 + " - " + response.text)
+            print ("response.status_code = " + response.status_code + " - " + response.text)
 
     return Response(status=200)
 
