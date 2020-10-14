@@ -9,7 +9,7 @@ import zcrmsdk as zoho_crm
 from flask import Flask, request, Response
 
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
-_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _ZOHO_NOTIFY_URL = "", "", "", "", ""
+_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _ZOHO_NOTIFY_URL, _GA_TID = "", "", "", "", ""
 
 
 def compare_change_in_data(old_data, new_data):
@@ -63,6 +63,7 @@ def create_parser():
     parser.add_argument('-cs', '--client_secret')
     parser.add_argument('-api', '--api_uri', default='eu')
     parser.add_argument('-nu', '--notify_url')
+    parser.add_argument('-tid', '--ga_tid')
 
     return parser
 
@@ -85,6 +86,7 @@ def initialize_variebles():
     _ZOHO_GRANT_TOKEN = namespace.grant_token
     _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
     _ZOHO_NOTIFY_URL = namespace.notify_url
+    _GA_TID = namespace.ga_tid
 
     config = {
         "apiBaseUrl": _ZOHO_API_URI,
@@ -136,13 +138,13 @@ def respond():
         if response.status_code == 200:
 
             current_stage = response.json()["data"][0]["Stage"]
-            print "id=" + ids + ": current stage is " + current_stage
+            print("id=" + ids + ": current stage is " + current_stage)
             current_google_id = response.json()["data"][0]["GA_client_id"]
 
             params_for_ga = {
                 "v": "1",
                 "t": "event",
-                "tid": "UA-179961291-2",
+                "tid": _GA_TID,
                 "cid": current_google_id,
                 "ec": "zoho_stage_change",
                 "ea": "stage_change",
