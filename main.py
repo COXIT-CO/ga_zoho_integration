@@ -93,7 +93,7 @@ def initialize_variebles():
         "client_id": zoho_client_id,
         "client_secret": zoho_client_secret,
         "redirect_uri": "coxit.co",
-        "accounts_url": "https://accounts.zoho.eu",
+        "accounts_url": "https://accounts.zoho.com",
     }
 
     return config
