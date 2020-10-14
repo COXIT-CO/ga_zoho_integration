@@ -72,7 +72,7 @@ def initialize_variebles():
     arguments)"""
 
     # change global variebles
-    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFICATIONS_ENDPOINT
+    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -84,7 +84,7 @@ def initialize_variebles():
     _ZOHO_LOGIN_EMAIL = namespace.email
     _ZOHO_GRANT_TOKEN = namespace.grant_token
     _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
-    _ZOHO_NOTIFICATIONS_ENDPOINT = namespace.notify_url
+    _ZOHO_NOTIFY_URL = namespace.notify_url
 
     config = {
         "apiBaseUrl": _ZOHO_API_URI,
