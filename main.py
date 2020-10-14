@@ -185,7 +185,7 @@ def creat_requests():
     # Enable Zoho Notifications
     header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN,
               'Content-type': 'application/json'}
-    print ("Zoho-oauthtoken ")
+    print ("Zoho-oauthtoken " + _ACCESS_TOKEN)
     requests.post(
         url=_ZOHO_API_URI +
         enable_notifications_endpoint,
