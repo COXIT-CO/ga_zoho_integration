@@ -7,16 +7,19 @@ import requests
 
 import zcrmsdk as zoho_crm
 from flask import Flask, request, Response
+from pyngrok import ngrok
 
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
-_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _ZOHO_NOTIFY_URL, _GA_TID = "", "", "", "", "", ""
+_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _GA_TID = "", "", "", "", ""
 
 
 def compare_change_in_data(old_data, new_data):
     """compare old stages and new stage. Return false if stage isnt change"""
     flag = False
+    print "\n Old stage: ", old_data.keys(),"\n", old_data.values()
+    print "\n New stage: ", new_data.keys(), new_data.values()
+
     for key, value in old_data.items():
-        print "\n Old stage: ",key, value,"\n New stage: ", new_data.keys(), new_data.values()
         if new_data.keys()[0] == key:
             if new_data.values()[0] != value:
                 flag = True
@@ -25,7 +28,7 @@ def compare_change_in_data(old_data, new_data):
                 flag = False
                 break
         else:
-            print "Add to json file return true"
+            #print "Add to json file return true"
             flag = True
 
     return flag
@@ -61,7 +64,6 @@ def create_parser():
     parser.add_argument('-cid', '--client_id')
     parser.add_argument('-cs', '--client_secret')
     parser.add_argument('-api', '--api_uri', default='com')
-    parser.add_argument('-nu', '--notify_url')
     parser.add_argument('-tid', '--ga_tid')
 
     return parser
@@ -72,7 +74,7 @@ def initialize_variebles():
     arguments)"""
 
     # change global variebles
-    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, _GA_TID
+    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _GA_TID
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -84,7 +86,6 @@ def initialize_variebles():
     _ZOHO_LOGIN_EMAIL = namespace.email
     _ZOHO_GRANT_TOKEN = namespace.grant_token
     _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
-    _ZOHO_NOTIFY_URL = namespace.notify_url
     _GA_TID = namespace.ga_tid
 
     config = {
@@ -180,7 +181,7 @@ def respond():
 def creat_requests():
     """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
-    notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
+    notify_url = str(ngrok.connect(port="5000")) + _ZOHO_NOTIFICATIONS_ENDPOINT
     print "\nYour parameters:"
     print ("notify_url: " + notify_url)
     print ("_ZOHO_NOTIFY_URL: " + notify_url)
