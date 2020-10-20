@@ -7,7 +7,6 @@ from os import path
 import requests
 import zcrmsdk as zoho_crm
 from flask import Flask, request, Response
-from pyga.entities import Visitor
 
 import config
 
@@ -16,7 +15,7 @@ LOGGER = logging.getLogger()
 
 # TODO: make following data configurable on script startup (passed as arguments)
 ZOHO_LOGIN_EMAIL = "yehorzhornovyi@gmail.com"
-ZOHO_GRANT_TOKEN = "1000.9e7799487e3bf285e5cb24c8e6fc7700.3d4a54cf2a7d353c8e30365df10c7d2c"
+ZOHO_GRANT_TOKEN = "1000.bdc5d0fbe6272a08832501f7d456f6ff.c181a61f97601e4d6c1fe4730d4a7ffb"
 ZOHO_CLIENT_ID = "1000.6UBJGFQ9ZBEU8R4OF9X35FZ4KROLJO"
 ZOHO_CLIENT_SECRET = "538947a51fc6138b864550f447e75d8c3ba2edd0c3"
 ZOHO_ACCOUNT_DOMEN = "eu"
@@ -45,7 +44,7 @@ REQUEST_INPUT_JSON = {
                 "Deals.edit"
             ],
             "token": "TOKEN_FOR_VERIFICATION_OF_1000000068002",
-            "notify_url": "https://dc4925b7ee28.ngrok.io" + ZOHO_NOTIFICATIONS_ENDPOINT,
+            "notify_url": "https://3f41dcc5af10.ngrok.io" + ZOHO_NOTIFICATIONS_ENDPOINT,
         }
     ]
 }
@@ -54,9 +53,9 @@ APP = Flask(__name__)
 
 def get_access_token():
     if path.isfile(CONFIG['token_persistence_path'] + 'zcrm_oauthtokens.pkl'):
-        _access_token = oauth_client.get_access_token(ZOHO_LOGIN_EMAIL)
+        _access_token = OAUTH_TOKEN.get_access_token(ZOHO_LOGIN_EMAIL)
     else:
-        oauth_tokens = oauth_client.generate_access_token(ZOHO_GRANT_TOKEN)
+        oauth_tokens = OAUTH_TOKEN.generate_access_token(ZOHO_GRANT_TOKEN)
         _access_token = oauth_tokens.get_access_token()
     return _access_token
 
@@ -64,12 +63,14 @@ def get_access_token():
 @APP.route(ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
 def respond():
     # get deals records
-    auth_header = {"Authorization": "Zoho-oauthtoken " + access_token}
+    auth_header = {"Authorization": "Zoho-oauthtoken " + ACCESS_TOKEN}
     module = request.json["module"]
     for id_str in request.json["ids"]:
         try:
             resp = requests.get(url=ZOHO_API_URL + "/crm/v2/" + module + "/" + id_str,
                                 headers=auth_header)
+            ga_resp = requests.get(url=ZOHO_API_URL + "/crm/v2/settings/variables",
+                                   headers=auth_header)
             resp.raise_for_status()
         except requests.RequestException as ex:
             LOGGER.error("The application can not get access to Zoho. Check the access token")
@@ -77,21 +78,22 @@ def respond():
         else:
             try:
                 current_stage = resp.json()["data"][0]["Stage"]
+                ga_client_id = ga_resp.json()["variables"][0]["value"]
                 LOGGER.info("id=" + id_str + ": current stage is " + current_stage)
-            except IndexError as ex:
+            except KeyError as ex:
                 LOGGER.exception(ex)
+                LOGGER.error("Please add a variable in CRM settings "
+                             "that contains client_id for Google Analytics")
                 return Response(status=500)
             else:
                 # TODO:Get record from DB and compare stages,
                 #  if stage changed then make POST request to analytic
-                user = Visitor()
 
                 params = {
                     "v": "1",
                     "t": "event",
-                    # TODO Change initialization of tid and uid parameters.
                     "tid": "UA-180087680-1",
-                    "uid": user.generate_unique_id(),
+                    "cid": ga_client_id,
                     "ec": "zoho_stage_change",
                     "ea": "stage_change",
                     "el": current_stage,
@@ -114,21 +116,21 @@ def respond():
 if __name__ == '__main__':
 
     zoho_crm.ZCRMRestClient.initialize(CONFIG)
-    oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
+    OAUTH_TOKEN = zoho_crm.ZohoOAuth.get_client_instance()
     # Enable Zoho Notifications
-    access_token = None
+    ACCESS_TOKEN = None
     try:
-        access_token = get_access_token()
-    except zoho_crm.OAuthUtility.ZohoOAuthException as e:
-        LOGGER.exception(e)
+        ACCESS_TOKEN = get_access_token()
+    except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
+        LOGGER.exception(ex)
         sys.exit("Access token data is invalid")
 
-    header = {"Authorization": "Zoho-oauthtoken " + access_token,
+    HEADER = {"Authorization": "Zoho-oauthtoken " + ACCESS_TOKEN,
               'Content-type': 'application/json'}
     try:
-        resp = requests.post(url=ZOHO_API_URL + ENABLE_NOTIFICATIONS_ENDPOINT, headers=header,
+        RESP = requests.post(url=ZOHO_API_URL + ENABLE_NOTIFICATIONS_ENDPOINT, headers=HEADER,
                              data=json.dumps(REQUEST_INPUT_JSON))
-        resp.raise_for_status()
+        RESP.raise_for_status()
     except requests.RequestException as ex:
         LOGGER.error("Can`t access to ZohoCRM. Check if grant token and domen is valid")
         LOGGER.exception(ex)

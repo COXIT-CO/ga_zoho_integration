@@ -1,4 +1,4 @@
 Flask==1.1.2
-requests~=2.7.0
+requests==2.24.0
 zcrmsdk==2.0.11
 pyga~=2.6.1
