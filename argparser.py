@@ -46,7 +46,7 @@ def init_parser():
     parser.add_argument('-csec', action="store", dest="client_secret", type=check_client_secret, required=True)
     parser.add_argument('-d', action="store", dest="domain", default='com', type=check_domain)
     parser.add_argument('-nu', action="store", dest='notify_url', type=str, required=True)
-    parser.add_argument('-h', action='store', dest='host', type=str, default='127.0.0.1')
+    parser.add_argument('-host', action='store', dest='host', type=str, default='127.0.0.1')
     parser.add_argument('-p', action='store', dest='port', type=str, default=5000)
     # parser.add_argument('tid', action="store", dest="ga_tid", required = True )
 
