@@ -98,4 +98,4 @@ if __name__ == '__main__':
         LOGGER.error("Can`t access to ZohoCRM. Check if grant token and domain is valid")
         LOGGER.exception(ex)
     else:
-        APP.run(host="127.0.0.1", port=5000)
+        APP.run(host=HOST, port=PORT)

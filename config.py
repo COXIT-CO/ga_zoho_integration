@@ -28,6 +28,9 @@ ZOHO_CLIENT_ID = ARGS_P.client_id
 ZOHO_CLIENT_SECRET = ARGS_P.client_secret
 ZOHO_ACCOUNT_DOMAIN = ARGS_P.domain
 
+HOST = ARGS_P.host
+PORT = ARGS_P.port
+
 ZOHO_API_URL = "https://www.zohoapis." + ZOHO_ACCOUNT_DOMAIN
 DEALS_ENDPOINT = "/crm/v2/Deals"
 ENABLE_NOTIFICATIONS_ENDPOINT = "/crm/v2/actions/watch"
