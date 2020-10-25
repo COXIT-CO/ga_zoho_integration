@@ -23,7 +23,7 @@ def get_access_token():
         _access_token = oauth_tokens.get_access_token()
     return _access_token
 
-
+@APP.route(ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
 def respond():
     # get deals records
     auth_header = {"Authorization": "Zoho-oauthtoken " + ACCESS_TOKEN}
