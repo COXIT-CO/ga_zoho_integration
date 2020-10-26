@@ -62,6 +62,7 @@ def create_parser():
     parser.add_argument('-cid', '--client_id')
     parser.add_argument('-cs', '--client_secret')
     parser.add_argument('-api', '--api_uri', default='eu')
+    parser.add_argument('-nu', '--notify_url')
     parser.add_argument('-tid', '--ga_tid')
 
     return parser
@@ -84,7 +85,7 @@ def initialize_variebles():
     _ZOHO_LOGIN_EMAIL = namespace.email
     _ZOHO_GRANT_TOKEN = namespace.grant_token
     _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
-    _ZOHO_NOTIFY_URL = requests.get("http://169.254.169.254/latest/meta-data/public-ipv4").content
+    _ZOHO_NOTIFY_URL = namespace.notify_url
     _GA_TID = namespace.ga_tid
 
     config = {
