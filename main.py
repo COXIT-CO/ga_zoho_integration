@@ -123,7 +123,12 @@ def respond():
     google_analytics_api_uri = "https://www.google-analytics.com"
     google_analytics_collect_endpoint = "/collect"
 
-    # get deals records
+    """creating _ACCESS_TOKEN and we check: how init this token """
+    global _ACCESS_TOKEN
+    oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
+    _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
+
+    """ getting deals records """
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
     module = request.json["module"]
     for ids in request.json["ids"]:
