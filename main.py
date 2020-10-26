@@ -61,7 +61,7 @@ def create_parser():
     parser.add_argument('-gt', '--grant_token')
     parser.add_argument('-cid', '--client_id')
     parser.add_argument('-cs', '--client_secret')
-    parser.add_argument('-api', '--api_uri', default='eu')
+    parser.add_argument('-api', '--api_uri', default='com')
     parser.add_argument('-nu', '--notify_url')
     parser.add_argument('-tid', '--ga_tid')
 
