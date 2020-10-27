@@ -9,7 +9,8 @@ import zcrmsdk as zoho_crm
 from flask import Flask, request, Response
 
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
-_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _ZOHO_NOTIFY_URL, _GA_TID = "", "", "", "", "", ""
+_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, \
+_ZOHO_NOTIFY_URL, _GA_TID, _PORT = "", "", "", "", "", "", ""
 
 
 def compare_change_in_data(old_data, new_data):
@@ -61,9 +62,11 @@ def create_parser():
     parser.add_argument('-gt', '--grant_token')
     parser.add_argument('-cid', '--client_id')
     parser.add_argument('-cs', '--client_secret')
-    parser.add_argument('-api', '--api_uri', default='eu')
-    parser.add_argument('-nu', '--notify_url')
+    parser.add_argument('-api', '--api_uri', default='com')
+    ip = "http://" + requests.get('http://ipinfo.io/json').json()['ip']
+    parser.add_argument('-nu', '--notify_url', default=ip)
     parser.add_argument('-tid', '--ga_tid')
+    parser.add_argument('-port', '--port', default='80')
 
     return parser
 
@@ -73,7 +76,7 @@ def initialize_variebles():
     arguments)"""
 
     # change global variebles
-    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, _GA_TID
+    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, _GA_TID, _PORT
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -87,6 +90,7 @@ def initialize_variebles():
     _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
     _ZOHO_NOTIFY_URL = namespace.notify_url
     _GA_TID = namespace.ga_tid
+    _PORT = namespace.port
 
     config = {
         "apiBaseUrl": _ZOHO_API_URI,
@@ -123,7 +127,12 @@ def respond():
     google_analytics_api_uri = "https://www.google-analytics.com"
     google_analytics_collect_endpoint = "/collect"
 
-    # get deals records
+    """creating _ACCESS_TOKEN and we check: how init this token """
+    global _ACCESS_TOKEN
+    oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
+    _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
+
+    """ getting deals records """
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
     module = request.json["module"]
     for ids in request.json["ids"]:
@@ -199,4 +208,4 @@ if __name__ == '__main__':
 
     creat_requests()
 
-    APP.run(host="127.0.0.1", port=5000)
+    APP.run(host="0.0.0.0", port=_PORT)
