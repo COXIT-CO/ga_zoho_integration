@@ -10,13 +10,13 @@ from flask import Flask, request, Response
 from pyngrok import ngrok
 
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
-_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _GA_TID = "", "", "", "", ""
+_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, _GA_TID, _PORT = "", "", "", "", "", ""
 
 
 def compare_change_in_data(old_data, new_data):
     """compare old stages and new stage. Return false if stage isnt change"""
     flag = False
-    print "\n Old stage: ", old_data.keys(),"\n", old_data.values()
+    print "\n Old stage: ", old_data.keys(), "\n", old_data.values()
     print "\n New stage: ", new_data.keys(), new_data.values()
 
     for key, value in old_data.items():
@@ -50,8 +50,8 @@ def db_save_stage_info(new_data):
             json.dump(old_data, write_file)
 
     except IOError:
-            with open("data_file.json", "w") as write_file:
-                json.dump(new_data, write_file)
+        with open("data_file.json", "w") as write_file:
+            json.dump(new_data, write_file)
 
     return flag
 
@@ -65,6 +65,7 @@ def create_parser():
     parser.add_argument('-cs', '--client_secret')
     parser.add_argument('-api', '--api_uri', default='com')
     parser.add_argument('-tid', '--ga_tid')
+    parser.add_argument('-pt', '--port', default=5000)
 
     return parser
 
@@ -74,7 +75,7 @@ def initialize_variebles():
     arguments)"""
 
     # change global variebles
-    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _GA_TID
+    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _GA_TID, _PORT
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -87,6 +88,7 @@ def initialize_variebles():
     _ZOHO_GRANT_TOKEN = namespace.grant_token
     _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
     _GA_TID = namespace.ga_tid
+    _PORT = namespace.port
 
     config = {
         "apiBaseUrl": _ZOHO_API_URI,
@@ -120,6 +122,12 @@ APP = Flask(__name__)
 @APP.route(_ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
 def respond():
     """generate post request to google analytics  """
+
+    # creating _ACCESS_TOKEN and we check: how init this token
+    global _ACCESS_TOKEN
+    oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
+    _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
+
     google_analytics_api_uri = "https://www.google-analytics.com"
     google_analytics_collect_endpoint = "/collect"
 
@@ -127,12 +135,15 @@ def respond():
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
     module = request.json["module"]
     for ids in request.json["ids"]:
-
-        ga_response = requests.get(
-            url=_ZOHO_API_URI +
-            "/crm/v2/" +
-            "settings/variables",
-            headers=auth_header)
+        try:
+            ga_response = requests.get(
+                url=_ZOHO_API_URI +
+                "/crm/v2/" +
+                "settings/variables",
+                headers=auth_header)
+        except BaseException:
+            print "Create variable 'GA_client_id' in ZOHO CRM"
+            break
 
         response = requests.get(
             url=_ZOHO_API_URI +
@@ -145,7 +156,6 @@ def respond():
         if response.status_code == 200:
             current_stage = response.json()["data"][0]["Stage"]
             print("\n id=" + ids + ": current stage is " + current_stage)
-
             if ga_response.json()[
                     "variables"][0]["api_name"] == "GA_client_id":
                 print "\n GA_client_id is finding"
@@ -170,7 +180,7 @@ def respond():
                     google_analytics_collect_endpoint,
                     params=params_for_ga)
                 if response.status_code == 200:
-                    print 50*"*","\n Update succesfully send to Google Analytic"
+                    print 50 * "*", "\n Update succesfully send to Google Analytic"
         else:
             print ("response.status_code = " +
                    str(response.status_code) + " - " + response.text)
@@ -181,7 +191,7 @@ def respond():
 def creat_requests():
     """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
-    notify_url = str(ngrok.connect(port="5000")) + _ZOHO_NOTIFICATIONS_ENDPOINT
+    notify_url = str(ngrok.connect(port=_PORT)) + _ZOHO_NOTIFICATIONS_ENDPOINT
     print "\nYour parameters:"
     print ("notify_url: " + notify_url)
     print ("_ZOHO_NOTIFY_URL: " + notify_url)
@@ -199,7 +209,7 @@ def creat_requests():
     # Enable Zoho Notifications
     header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN,
               'Content-type': 'application/json'}
-    print ("Zoho-oauthtoken " + _ACCESS_TOKEN +"\n")
+    print ("Zoho-oauthtoken " + _ACCESS_TOKEN + "\n")
     requests.post(
         url=_ZOHO_API_URI +
         enable_notifications_endpoint,
@@ -213,4 +223,4 @@ if __name__ == '__main__':
 
     creat_requests()
 
-    APP.run(host="127.0.0.1", port=5000)
+    APP.run(host="127.0.0.1", port=_PORT)

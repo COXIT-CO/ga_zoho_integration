@@ -23,4 +23,4 @@ The tracking ID  is a segment of the sample "UA-000000-2".
 It must be included in the tracking code to tell Analytics to which account and resource to send data.
 
 #Quick start template
-python main.py -gt 1000.cfa0885cc71f4047173d67aaf1ab869f.03f9daf5cfb6fb94458bc3fd5128ddf4 -e bear.victor28@gmail.com -cid 1000.LQ49HO3IAPPHLBZCMOF16EMMR5VUQW -cs f0f4909fe0010021835db0fe48cbb1337eda2f472e -tid UA-179961291-2 -api eu
+python main.py -gt 1000.25b090fd24c8bf5f88ec8f30d3949615.e0e3964415098c16f300b5e79f1b4670 -e victor997212@gmail.com -cid 1000.WW9EIIGBU1G4RLE1LTTEOXL05PXA7Z -cs 97e01d73d4d2c79ec7f53d427c8bd6e1cc2c04f82c -tid UA-179961291-2 -api eu -pt 5000
