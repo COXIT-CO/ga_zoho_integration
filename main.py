@@ -63,7 +63,7 @@ def create_parser():
     parser.add_argument('-cid', '--client_id')
     parser.add_argument('-cs', '--client_secret')
     parser.add_argument('-api', '--api_uri', default='com')
-    ip = requests.get('http://ipinfo.io/json').json()['ip']
+    ip = "http://" + requests.get('http://ipinfo.io/json').json()['ip']
     parser.add_argument('-nu', '--notify_url', default=ip)
     parser.add_argument('-tid', '--ga_tid')
     parser.add_argument('-port', '--port', default='80')
