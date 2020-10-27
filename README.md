@@ -51,5 +51,8 @@ It must be included in the tracking code to tell Analytics to which account and 
 `-api`: domain-specific Zoho Accounts URL ending. For example it may be `eu`, `in` or other as specified
  here https://www.zoho.com/crm/developer/docs/api/v2/access-refresh.html. `.com` is default option, no need to specify.
 
+`-port`: port for Zoho CRM notifications Webhook server. By default it's 80. 
+To use not 80 port you will need to do additional proxy server set up.
+
 For the very first time you will need to specify grant token `-ga`. How to generate it
 follow instruction for Self Client option here https://www.zoho.com/crm/developer/docs/api/v2/auth-request.html.
