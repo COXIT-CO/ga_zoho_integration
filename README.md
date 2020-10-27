@@ -8,7 +8,14 @@ Python 2.7
 
 Run `pip install -r requirements.txt` to install all required libraries.
 
-#Zoho API Application set up
+## Zoho CRM set up
+Zoho CRM Deals should contain `GA_client_id` field which should be populated by Google Analytics Client Id value.
+
+## Google Analytics set up
+
+Set up goals in GA for every deal stage. Goal type: `Event`. Goal IDs has to be in the same order as the CRM pipeline.
+
+# Zoho API Application set up
 
 zcrmsdk - Python SDK acts as a wrapper for Zoho CRM APIs
 Client app must have Python 2.7 for this library
@@ -18,14 +25,7 @@ Users have to generate `ZOHO_GRANT_TOKEN`, so use this Scope:
 
 For more detailed instruction read Zoho CRM API Documentation: https://www.zoho.com/crm/developer/docs/api/v2/.
 
-#Zoho CRM set up
-
-
-#Google Analytics set up
-
-Set up goals in GA for every deal stage. Goal type: `Event`. Goal IDs has to be in the same order as the CRM pipeline.
-
-## Run The Script
+# Run The Script
 
 To start the script you should have Linux server with Python 2.7 and Pip installed to be able to install 
 required libraries from `requirments.txt`. Also you will need public IP to be able to receive notifications 
