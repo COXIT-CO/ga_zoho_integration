@@ -135,48 +135,60 @@ def respond():
 
     """creating _ACCESS_TOKEN and we check: how init this token """
     global _ACCESS_TOKEN
-    oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
-    _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
+    try:
+        oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
+        _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
+    except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
+        LOGGER.error("Smth went wrong with token file")
 
     """ getting deals records """
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
     module = request.json["module"]
     for ids in request.json["ids"]:
-
-        response = requests.get(
-            url=_ZOHO_API_URI +
-            "/crm/v2/" +
-            module +
-            "/" +
-            ids,
-            headers=auth_header)
-        if response.status_code == 200:
-
-            current_stage = response.json()["data"][0]["Stage"]
-            print("id=" + ids + ": current stage is " + current_stage)
-            current_google_id = response.json()["data"][0]["GA_client_id"]
-
-            params_for_ga = {
-                "v": "1",
-                "t": "event",
-                "tid": _GA_TID,
-                "cid": current_google_id,
-                "ec": "zoho_stage_change",
-                "ea": "stage_change",
-                "el": current_stage,
-                "ua": "Opera / 9.80"
-            }
-            data_stage = {current_google_id: current_stage}
-            if db_save_stage_info(data_stage):
-                response = requests.post(
-                    url=google_analytics_api_uri +
-                    google_analytics_collect_endpoint,
-                    params=params_for_ga)
-                if response.status_code == 200:
-                    print("Update succesfully send to Google Analytic")
+        try:
+            response = requests.get(
+                url=_ZOHO_API_URI +
+                    "/crm/v2/" +
+                    module +
+                    "/" +
+                    ids,
+                headers=auth_header)
+        except requests.RequestException as ex:
+            LOGGER.error("The application can not get access to Zoho. Check the access token")
+            LOGGER.exception(ex)
         else:
-            print("response.status_code = " + str(response.status_code) + " - " + response.text)
-
+            try:
+                current_stage = response.json()["data"][0]["Stage"]
+                print("id=" + ids + ": current stage is " + current_stage)
+                current_google_id = response.json()["data"][0]["GA_client_id"]
+            except KeyError as ex:
+                LOGGER.exception(ex)
+                LOGGER.error("Please add a variable in CRM settings "
+                             "that contains client_id for Google Analytics")
+            else:
+                params_for_ga = {
+                    "v": "1",
+                    "t": "event",
+                    "tid": _GA_TID,
+                    "cid": current_google_id,
+                    "ec": "zoho_stage_change",
+                    "ea": "stage_change",
+                    "el": current_stage,
+                    "ua": "Opera / 9.80"
+                }
+                data_stage = {current_google_id: current_stage}
+                if db_save_stage_info(data_stage):
+                    try:
+                        response = requests.post(
+                            url=google_analytics_api_uri +
+                                google_analytics_collect_endpoint,
+                            params=params_for_ga)
+                        response.raise_for_status()
+                    except requests.RequestException as ex:
+                        LOGGER.error("Problems with post request to GA")
+                        LOGGER.exception(ex)
+                    else:
+                        LOGGER.info("Update succesfully send to Google Analytic")
     return Response(status=200)
 
 
