@@ -105,7 +105,7 @@ def initialize_variebles():
         "client_id": zoho_client_id,
         "client_secret": zoho_client_secret,
         "redirect_uri": "coxit.co",
-        "accounts_url": "https://accounts.zoho.com",
+        "accounts_url": "https://accounts.zoho." + namespace.api_uri,
     }
 
     return config
