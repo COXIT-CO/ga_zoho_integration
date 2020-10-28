@@ -184,9 +184,9 @@ def creat_requests():
     """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
-    print("notify_url: " + notify_url)
-    print("_ZOHO_NOTIFY_URL: " + notify_url)
-    print("_ZOHO_NOTIFICATIONS_ENDPOINT: " + _ZOHO_NOTIFICATIONS_ENDPOINT)
+    LOGGER.info("notify_url: " + notify_url)
+    LOGGER.info("_ZOHO_NOTIFY_URL: " + notify_url)
+    LOGGER.info("_ZOHO_NOTIFICATIONS_ENDPOINT: " + _ZOHO_NOTIFICATIONS_ENDPOINT)
 
     request_input_json = {
         "watch": [
@@ -200,13 +200,13 @@ def creat_requests():
     # Enable Zoho Notifications
     header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN,
               'Content-type': 'application/json'}
-    print("Zoho-oauthtoken " + _ACCESS_TOKEN)
-    requests.post(
+    LOGGER.info("Zoho-oauthtoken " + _ACCESS_TOKEN)
+    resp = requests.post(
         url=_ZOHO_API_URI +
-        enable_notifications_endpoint,
+            enable_notifications_endpoint,
         headers=header,
         data=json.dumps(request_input_json))
-
+    resp.raise_for_status()
 
 if __name__ == '__main__':
 
@@ -214,8 +214,12 @@ if __name__ == '__main__':
         creat_init_access_token()
     except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
         LOGGER.exception(ex)
-        sys.exit("Access token data is invalid")
+        sys.exit("Passed data in parameters is invalid")
 
-    creat_requests()
-
-    APP.run(host="0.0.0.0", port=_PORT)
+    try:
+        creat_requests()
+    except requests.RequestException as ex:
+        LOGGER.error("ZohoCRM does not response. Check selected scopes generating grant_token")
+        LOGGER.exception(ex)
+    else:
+        APP.run(host="0.0.0.0", port=_PORT)
