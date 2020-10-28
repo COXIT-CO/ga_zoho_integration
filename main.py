@@ -1,12 +1,19 @@
 """Python script which integrates Zoho CRM deals data with google analytics."""
-import sys
 import argparse
 import json
+import logging
+import sys
+from logging.config import dictConfig
+from os import path
+
 import requests
-
-
 import zcrmsdk as zoho_crm
 from flask import Flask, request, Response
+
+from config import LOG_CONFIG
+
+dictConfig(LOG_CONFIG)
+LOGGER = logging.getLogger()
 
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
 _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, \
@@ -17,7 +24,7 @@ def compare_change_in_data(old_data, new_data):
     """compare old stages and new stage. Return false if stage isnt change"""
     flag = False
     for key, value in old_data.items():
-        print key, value, new_data.keys(), new_data.values()
+        print(key, value, new_data.keys(), new_data.values())
         if new_data.keys()[0] == key:
             if new_data.values()[0] != value:
                 flag = True
@@ -26,7 +33,7 @@ def compare_change_in_data(old_data, new_data):
                 flag = False
                 break
         else:
-            print "Add to json file return true"
+            print("Add to json file return true")
             flag = True
 
     return flag
@@ -48,7 +55,6 @@ def db_save_stage_info(new_data):
             json.dump(old_data, write_file)
 
     except IOError:
-        print "this&*"
         with open("data_file.json", "w") as write_file:
             json.dump(new_data, write_file)
 
@@ -111,9 +117,9 @@ def creat_init_access_token():
 
     zoho_crm.ZCRMRestClient.initialize(initialize_variebles())
     oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
-    try:
+    if path.isfile('./zcrm_oauthtokens.pkl'):
         _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
-    except BaseException:
+    else:
         oauth_tokens = oauth_client.generate_access_token(_ZOHO_GRANT_TOKEN)
         _ACCESS_TOKEN = oauth_tokens.get_access_token()
 
@@ -167,9 +173,9 @@ def respond():
                     google_analytics_collect_endpoint,
                     params=params_for_ga)
                 if response.status_code == 200:
-                    print "Update succesfully send to Google Analytic"
+                    print("Update succesfully send to Google Analytic")
         else:
-            print ("response.status_code = " + str(response.status_code) + " - " + response.text)
+            print("response.status_code = " + str(response.status_code) + " - " + response.text)
 
     return Response(status=200)
 
@@ -178,9 +184,9 @@ def creat_requests():
     """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
-    print ("notify_url: " + notify_url)
-    print ("_ZOHO_NOTIFY_URL: " + notify_url)
-    print ("_ZOHO_NOTIFICATIONS_ENDPOINT: " + _ZOHO_NOTIFICATIONS_ENDPOINT)
+    print("notify_url: " + notify_url)
+    print("_ZOHO_NOTIFY_URL: " + notify_url)
+    print("_ZOHO_NOTIFICATIONS_ENDPOINT: " + _ZOHO_NOTIFICATIONS_ENDPOINT)
 
     request_input_json = {
         "watch": [
@@ -194,7 +200,7 @@ def creat_requests():
     # Enable Zoho Notifications
     header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN,
               'Content-type': 'application/json'}
-    print ("Zoho-oauthtoken " + _ACCESS_TOKEN)
+    print("Zoho-oauthtoken " + _ACCESS_TOKEN)
     requests.post(
         url=_ZOHO_API_URI +
         enable_notifications_endpoint,
@@ -204,7 +210,11 @@ def creat_requests():
 
 if __name__ == '__main__':
 
-    creat_init_access_token()
+    try:
+        creat_init_access_token()
+    except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
+        LOGGER.exception(ex)
+        sys.exit("Access token data is invalid")
 
     creat_requests()
 
