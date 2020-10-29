@@ -3,17 +3,36 @@ import logging
 LOG_CONFIG = dict(
     version=1,
     formatters={
-        'f': {'format':
-                  '[%(levelname)s] - Line: %(lineno)d '
-                  '- %(name)s - : %(message)s.'}
+        'simple':
+            {
+                'format': '[%(asctime)s] [%(levelname)s] - : %(message)s.',
+                'datefmt': '%H:%M:%S',
+            },
+        'detailed':
+            {
+                'format': '[%(asctime)s] [%(levelname)s] - Line: %(lineno)d '
+                          '- %(name)s - : %(message)s.',
+                'datefmt': '%d/%m/%y - %H:%M:%S',
+            },
     },
     handlers={
-        'h': {'class': 'logging.StreamHandler',
-              'formatter': 'f',
-              'level': logging.ERROR}
+        'stream': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'level': logging.INFO,
+        },
+        'file':
+            {
+                'class': 'logging.handlers.TimedRotatingFileHandler',
+                'formatter': 'detailed',
+                'level': logging.INFO,
+                'filename': 'logfile',
+                'when': 'midnight',
+            }
     },
     root={
-        'handlers': ['h'],
-        'level': logging.ERROR,
+        'handlers': ['stream', 'file', ],
+        'level': logging.INFO,
+
     },
 )
