@@ -16,8 +16,10 @@ _ZOHO_NOTIFY_URL, _GA_TID, _PORT = "", "", "", "", "", "", ""
 def compare_change_in_data(old_data, new_data):
     """compare old stages and new stage. Return false if stage isnt change"""
     flag = False
+    print "\n Old stage: ", old_data.keys(), "\n", old_data.values()
+    print "\n New stage: ", new_data.keys(), new_data.values()
+
     for key, value in old_data.items():
-        print key, value, new_data.keys(), new_data.values()
         if new_data.keys()[0] == key:
             if new_data.values()[0] != value:
                 flag = True
@@ -26,7 +28,7 @@ def compare_change_in_data(old_data, new_data):
                 flag = False
                 break
         else:
-            print "Add to json file return true"
+            #print "Add to json file return true"
             flag = True
 
     return flag
@@ -48,7 +50,6 @@ def db_save_stage_info(new_data):
             json.dump(old_data, write_file)
 
     except IOError:
-        print "this&*"
         with open("data_file.json", "w") as write_file:
             json.dump(new_data, write_file)
 
@@ -136,6 +137,7 @@ def respond():
     # get deals records
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
     module = request.json["module"]
+    print "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
     for ids in request.json["ids"]:
         try:
             ga_response = requests.get(
@@ -175,7 +177,7 @@ def respond():
                 "el": current_stage,
                 "ua": "Opera / 9.80"
             }
-            data_stage = {current_google_id: current_stage}
+            data_stage = {response.json()["data"][0]["id"]: current_stage}
             if db_save_stage_info(data_stage):
                 response = requests.post(
                     url=google_analytics_api_uri +
