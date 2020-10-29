@@ -33,7 +33,7 @@ def compare_change_in_data(old_data, new_data):
                 flag = False
                 break
         else:
-            print("Add to json file return true")
+            LOGGER.info("Add to json file return true")
             flag = True
 
     return flag
@@ -139,7 +139,7 @@ def respond():
         oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
         _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
     except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
-        LOGGER.error("Smth went wrong with token file")
+        LOGGER.error("Unable to refresh access token", exc_info=ex)
 
     """ getting deals records """
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
@@ -154,17 +154,19 @@ def respond():
                     ids,
                 headers=auth_header)
         except requests.RequestException as ex:
-            LOGGER.error("The application can not get access to Zoho. Check the access token")
-            LOGGER.exception(ex)
+            LOGGER.error("The application can not get access to Zoho. Check the access token",
+                         exc_info=ex)
         else:
             try:
                 current_stage = response.json()["data"][0]["Stage"]
-                print("id=" + ids + ": current stage is " + current_stage)
-                current_google_id = response.json()["data"][0]["GA_client_id"]
+                LOGGER.info("id=" + ids + ": current stage is " + current_stage)
+                # current_google_id = response.json()["data"][0]["GA_client_id"]
+                current_google_id = requests.get(url=_ZOHO_API_URI + "/crm/v2/settings/variables",
+                                                 headers=auth_header)
             except KeyError as ex:
-                LOGGER.exception(ex)
-                LOGGER.error("Please add a variable in CRM settings "
-                             "that contains client_id for Google Analytics")
+                LOGGER.error("Incorrect response data. Check if check if you add client_id variable to ZohoCRM",
+                             exc_info=ex)
+                LOGGER.info(response.json()["data"][0])
             else:
                 params_for_ga = {
                     "v": "1",
@@ -176,7 +178,7 @@ def respond():
                     "el": current_stage,
                     "ua": "Opera / 9.80"
                 }
-                data_stage = {current_google_id: current_stage}
+                data_stage = {response.json()["data"][0]["id"]: current_stage}
                 if db_save_stage_info(data_stage):
                     try:
                         response = requests.post(
@@ -185,10 +187,11 @@ def respond():
                             params=params_for_ga)
                         response.raise_for_status()
                     except requests.RequestException as ex:
-                        LOGGER.error("Problems with post request to GA")
-                        LOGGER.exception(ex)
+                        LOGGER.error("Unable to send post request to Google Analytics", exc_info=ex)
                     else:
-                        LOGGER.info("Update succesfully send to Google Analytic")
+                        LOGGER.info("Update successfully sent to Google Analytic")
+                else:
+                    LOGGER.info("Stage was not changed. Event was not sent")
     return Response(status=200)
 
 
@@ -197,7 +200,6 @@ def creat_requests():
     enable_notifications_endpoint = "/crm/v2/actions/watch"
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
     LOGGER.info("notify_url: " + notify_url)
-    LOGGER.info("_ZOHO_NOTIFY_URL: " + notify_url)
     LOGGER.info("_ZOHO_NOTIFICATIONS_ENDPOINT: " + _ZOHO_NOTIFICATIONS_ENDPOINT)
 
     request_input_json = {
@@ -225,13 +227,12 @@ if __name__ == '__main__':
     try:
         creat_init_access_token()
     except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
-        LOGGER.exception(ex)
-        sys.exit("Passed data in parameters is invalid")
+        LOGGER.error(ex)
+        sys.exit("Passed data in parameters is invalid. Script is terminated")
 
     try:
         creat_requests()
     except requests.RequestException as ex:
-        LOGGER.error("ZohoCRM does not response. Check selected scopes generating grant_token")
-        LOGGER.exception(ex)
+        LOGGER.error("ZohoCRM does not response. Check selected scopes generating grant_token", exc_info=ex)
     else:
-        APP.run(host="0.0.0.0", port=_PORT)
+        APP.run(host="127.0.0.1", port=_PORT)
