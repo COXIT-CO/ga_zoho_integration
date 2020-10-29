@@ -1,4 +1,5 @@
-# pylint: disable=global-statement,import-error
+# pylint: disable=global-statement
+# pylint: disable=import-error
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import sys
 import argparse
