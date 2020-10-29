@@ -54,5 +54,7 @@ It must be included in the tracking code to tell Analytics to which account and 
 `-port`: port for Zoho CRM notifications Webhook server. By default it's 80. 
 To use not 80 port you will need to do additional proxy server set up.
 
+`-log`: mode of logging handling. To enable logging to console pass 'console'. By default it's 'file' 
+
 For the very first time you will need to specify grant token `-ga`. How to generate it
 follow instruction for Self Client option here https://www.zoho.com/crm/developer/docs/api/v2/auth-request.html.
