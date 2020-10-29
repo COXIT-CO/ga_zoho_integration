@@ -1,3 +1,4 @@
+# pylint: disable=global-statement,import-error
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import sys
 import argparse
@@ -64,8 +65,8 @@ def create_parser():
     parser.add_argument('-cid', '--client_id')
     parser.add_argument('-cs', '--client_secret')
     parser.add_argument('-api', '--api_uri', default='com')
-    ip = "http://" + requests.get('http://ipinfo.io/json').json()['ip']
-    parser.add_argument('-nu', '--notify_url', default=ip)
+    public_ip = "http://" + requests.get('http://ipinfo.io/json').json()['ip']
+    parser.add_argument('-nu', '--notify_url', default=public_ip)
     parser.add_argument('-tid', '--ga_tid')
     parser.add_argument('-port', '--port', default='80')
 
@@ -158,7 +159,7 @@ def respond():
         if response.status_code == 200:
 
             current_stage = response.json()["data"][0]["Stage"]
-            print("\n id=" + ids + ": current stage is " + current_stage)
+            print "\n id=" + ids + ": current stage is " + current_stage
             if ga_response.json()[
                     "variables"][0]["api_name"] == "GA_client_id":
                 print "\n GA_client_id is finding"
@@ -195,9 +196,9 @@ def creat_requests():
     """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
-    print ("notify_url: " + notify_url)
-    print ("_ZOHO_NOTIFY_URL: " + notify_url)
-    print ("_ZOHO_NOTIFICATIONS_ENDPOINT: " + _ZOHO_NOTIFICATIONS_ENDPOINT)
+    print "notify_url: " + notify_url
+    print "_ZOHO_NOTIFY_URL: " + notify_url
+    print "_ZOHO_NOTIFICATIONS_ENDPOINT: " + _ZOHO_NOTIFICATIONS_ENDPOINT
 
     request_input_json = {
         "watch": [
@@ -211,7 +212,7 @@ def creat_requests():
     # Enable Zoho Notifications
     header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN,
               'Content-type': 'application/json'}
-    print ("Zoho-oauthtoken " + _ACCESS_TOKEN + "\n")
+    print "Zoho-oauthtoken " + _ACCESS_TOKEN + "\n"
     requests.post(
         url=_ZOHO_API_URI +
         enable_notifications_endpoint,

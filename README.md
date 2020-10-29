@@ -21,7 +21,7 @@ zcrmsdk - Python SDK acts as a wrapper for Zoho CRM APIs
 Client app must have Python 2.7 for this library
 
 Users have to generate `ZOHO_GRANT_TOKEN`, so use this Scope:
-`ZohoCRM.notifications.ALL, ZohoCRM.notifications.WRITE, ZohoCRM.modules.ALL, AAAserver.profile.Read`
+'ZohoCRM.notifications.ALL, ZohoCRM.modules.ALL, AAAserver.profile.Read, ZohoCRM.settings.ALL, ZohoCRM.settings.variables.ALL'
 
 For more detailed instruction read Zoho CRM API Documentation: https://www.zoho.com/crm/developer/docs/api/v2/.
 
