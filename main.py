@@ -137,7 +137,6 @@ def respond():
     # get deals records
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
     module = request.json["module"]
-    print "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW"
     for ids in request.json["ids"]:
         try:
             ga_response = requests.get(
