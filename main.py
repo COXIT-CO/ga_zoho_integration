@@ -12,14 +12,9 @@ from flask import Flask, request, Response
 
 from config import LOG_CONFIG
 
-dictConfig(LOG_CONFIG)
-LOGGER = logging.getLogger()
-
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
 _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, \
 _ZOHO_NOTIFY_URL, _GA_TID, _PORT = "", "", "", "", "", "", ""
-
-
 def compare_change_in_data(old_data, new_data):
     """compare old stages and new stage. Return false if stage isnt change"""
     flag = False
@@ -73,6 +68,7 @@ def create_parser():
     parser.add_argument('-nu', '--notify_url', default=ip)
     parser.add_argument('-tid', '--ga_tid')
     parser.add_argument('-port', '--port', default='80')
+    parser.add_argument('-log', '--logging', default='file')
 
     return parser
 
@@ -82,7 +78,7 @@ def initialize_variebles():
     arguments)"""
 
     # change global variebles
-    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, _GA_TID, _PORT
+    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, _GA_TID, _PORT, LOGGER
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -97,6 +93,10 @@ def initialize_variebles():
     _ZOHO_NOTIFY_URL = namespace.notify_url
     _GA_TID = namespace.ga_tid
     _PORT = namespace.port
+
+    LOG_CONFIG['root']['handlers'].append(namespace.logging)
+    dictConfig(LOG_CONFIG)
+    LOGGER = logging.getLogger()
 
     config = {
         "apiBaseUrl": _ZOHO_API_URI,
