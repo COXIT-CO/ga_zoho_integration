@@ -38,7 +38,7 @@ class TestFunct(unittest.TestCase):
         """test funct save new data"""
         test_data = {"1": "test"}
         flag = m.db_save_stage_info(test_data)
-        self.assertEqual(flag, False)
+        self.assertEqual(flag, True)
 
 
 if __name__ == '__main__':
