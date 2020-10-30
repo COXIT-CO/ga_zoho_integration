@@ -1,3 +1,4 @@
+"""Configuration module for logging"""
 import logging
 
 LOG_CONFIG = dict(
@@ -16,7 +17,7 @@ LOG_CONFIG = dict(
             },
     },
     handlers={
-        'stream': {
+        'console': {
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
             'level': logging.INFO,
@@ -26,12 +27,12 @@ LOG_CONFIG = dict(
                 'class': 'logging.handlers.TimedRotatingFileHandler',
                 'formatter': 'detailed',
                 'level': logging.INFO,
-                'filename': 'logfile',
+                'filename': './logs/logfile',
                 'when': 'midnight',
             }
     },
     root={
-        'handlers': ['stream', 'file', ],
+        'handlers': ['file', ],
         'level': logging.INFO,
 
     },

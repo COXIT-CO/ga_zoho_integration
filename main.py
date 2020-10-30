@@ -15,6 +15,9 @@ from config import LOG_CONFIG
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
 _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, \
 _ZOHO_NOTIFY_URL, _GA_TID, _PORT = "", "", "", "", "", "", ""
+LOGGER = logging.getLogger()
+
+
 def compare_change_in_data(old_data, new_data):
     """compare old stages and new stage. Return false if stage isnt change"""
     flag = False
@@ -140,6 +143,7 @@ def respond():
         _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
     except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
         LOGGER.error("Unable to refresh access token", exc_info=ex)
+        return
 
     """ getting deals records """
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
@@ -153,6 +157,7 @@ def respond():
                     "/" +
                     ids,
                 headers=auth_header)
+            response.raise_for_status()
         except requests.RequestException as ex:
             LOGGER.error("The application can not get access to Zoho. Check the access token",
                          exc_info=ex)
@@ -160,13 +165,12 @@ def respond():
             try:
                 current_stage = response.json()["data"][0]["Stage"]
                 LOGGER.info("id=" + ids + ": current stage is " + current_stage)
-                # current_google_id = response.json()["data"][0]["GA_client_id"]
-                current_google_id = requests.get(url=_ZOHO_API_URI + "/crm/v2/settings/variables",
-                                                 headers=auth_header)
+                current_google_id = response.json()["data"][0]["GA_client_id"]
             except KeyError as ex:
                 LOGGER.error("Incorrect response data. Check if check if you add client_id variable to ZohoCRM",
                              exc_info=ex)
                 LOGGER.info(response.json()["data"][0])
+                return Response(status=500)
             else:
                 params_for_ga = {
                     "v": "1",
@@ -178,7 +182,7 @@ def respond():
                     "el": current_stage,
                     "ua": "Opera / 9.80"
                 }
-                data_stage = {response.json()["data"][0]["id"]: current_stage}
+                data_stage = {current_google_id: current_stage}
                 if db_save_stage_info(data_stage):
                     try:
                         response = requests.post(
@@ -188,6 +192,7 @@ def respond():
                         response.raise_for_status()
                     except requests.RequestException as ex:
                         LOGGER.error("Unable to send post request to Google Analytics", exc_info=ex)
+                        return Response(status=401)
                     else:
                         LOGGER.info("Update successfully sent to Google Analytic")
                 else:
@@ -235,4 +240,4 @@ if __name__ == '__main__':
     except requests.RequestException as ex:
         LOGGER.error("ZohoCRM does not response. Check selected scopes generating grant_token", exc_info=ex)
     else:
-        APP.run(host="127.0.0.1", port=_PORT)
+        APP.run(host="0.0.0.0", port=_PORT)
