@@ -1,4 +1,3 @@
 Flask==1.1.2
 requests==2.24.0
 zcrmsdk==2.0.11
-pyngrok==4.2.2

@@ -11,14 +11,12 @@ from flask import Flask, request, Response
 
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
 _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, \
-_ZOHO_NOTIFY_URL, _GA_TID, _PORT = "", "", "", "", "", "", ""
+    _ZOHO_NOTIFY_URL, _GA_TID, _PORT = "", "", "", "", "", "", ""
 
 
 def compare_change_in_data(old_data, new_data):
     """compare old stages and new stage. Return false if stage isnt change"""
     flag = False
-    print "\n Old stage: ", old_data.keys(), "\n", old_data.values()
-    print "\n New stage: ", new_data.keys(), new_data.values()
 
     for key, value in old_data.items():
         if new_data.keys()[0] == key:
@@ -29,7 +27,6 @@ def compare_change_in_data(old_data, new_data):
                 flag = False
                 break
         else:
-            #print "Add to json file return true"
             flag = True
 
     return flag
@@ -212,7 +209,6 @@ def creat_requests():
     # Enable Zoho Notifications
     header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN,
               'Content-type': 'application/json'}
-    print "Zoho-oauthtoken " + _ACCESS_TOKEN + "\n"
     requests.post(
         url=_ZOHO_API_URI +
         enable_notifications_endpoint,
