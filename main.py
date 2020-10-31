@@ -204,8 +204,6 @@ def creat_requests():
     """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
-    LOGGER.info("notify_url: " + notify_url)
-    LOGGER.info("_ZOHO_NOTIFICATIONS_ENDPOINT: " + _ZOHO_NOTIFICATIONS_ENDPOINT)
 
     request_input_json = {
         "watch": [
