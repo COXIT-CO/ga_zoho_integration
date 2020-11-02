@@ -1,4 +1,4 @@
-# pylint: disable=global-statement,import-error
+# pylint: disable=global-statement,import-error,pointless-string-statement
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
 import json
@@ -27,7 +27,6 @@ def compare_change_in_data(old_data, new_data):
         if new_data.keys()[0] == key:
             if new_data.values()[0] != value:
                 flag = True
-                break
             else:
                 flag = False
                 break
