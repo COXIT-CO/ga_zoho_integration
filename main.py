@@ -2,10 +2,11 @@
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
 import json
-import logging
 import sys
-from logging.config import dictConfig
 from os import path
+
+import logging
+from logging.config import dictConfig
 
 import requests
 import zcrmsdk as zoho_crm
