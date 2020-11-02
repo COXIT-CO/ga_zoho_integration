@@ -148,8 +148,8 @@ def respond():
 
     """ getting deals records """
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
-    module = request.json()["module"]
-    for ids in request.json()["ids"]:
+    module = request.json["module"]
+    for ids in request.json["ids"]:
         try:
             response = requests.get(
                 url=_ZOHO_API_URI +
