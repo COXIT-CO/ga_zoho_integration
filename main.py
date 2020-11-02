@@ -1,3 +1,4 @@
+# pylint: disable=global-statement,import-error
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
 import json
@@ -21,8 +22,8 @@ LOGGER = logging.getLogger()
 def compare_change_in_data(old_data, new_data):
     """compare old stages and new stage. Return false if stage isnt change"""
     flag = False
+
     for key, value in old_data.items():
-        print(key, value, new_data.keys(), new_data.values())
         if new_data.keys()[0] == key:
             if new_data.values()[0] != value:
                 flag = True
@@ -31,7 +32,6 @@ def compare_change_in_data(old_data, new_data):
                 flag = False
                 break
         else:
-            LOGGER.info("Add to json file return true")
             flag = True
 
     return flag
@@ -67,8 +67,8 @@ def create_parser():
     parser.add_argument('-cid', '--client_id')
     parser.add_argument('-cs', '--client_secret')
     parser.add_argument('-api', '--api_uri', default='com')
-    ip = "http://" + requests.get('http://ipinfo.io/json').json()['ip']
-    parser.add_argument('-nu', '--notify_url', default=ip)
+    public_ip = "http://" + requests.get('http://ipinfo.io/json').json()['ip']
+    parser.add_argument('-nu', '--notify_url', default=public_ip)
     parser.add_argument('-tid', '--ga_tid')
     parser.add_argument('-port', '--port', default='80')
     parser.add_argument('-log', '--logging', default='file')
@@ -81,7 +81,8 @@ def initialize_variebles():
     arguments)"""
 
     # change global variebles
-    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, _GA_TID, _PORT, LOGGER
+    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, _GA_TID, \
+        _PORT, LOGGER
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -143,19 +144,19 @@ def respond():
         _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
     except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
         LOGGER.error("Unable to refresh access token", exc_info=ex)
-        return
+        return Response(status=500)
 
     """ getting deals records """
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
-    module = request.json["module"]
-    for ids in request.json["ids"]:
+    module = request.json()["module"]
+    for ids in request.json()["ids"]:
         try:
             response = requests.get(
                 url=_ZOHO_API_URI +
-                    "/crm/v2/" +
-                    module +
-                    "/" +
-                    ids,
+                "/crm/v2/" +
+                module +
+                "/" +
+                ids,
                 headers=auth_header)
             response.raise_for_status()
         except requests.RequestException as ex:
@@ -167,7 +168,8 @@ def respond():
                 LOGGER.info("id=" + ids + ": current stage is " + current_stage)
                 current_google_id = response.json()["data"][0]["GA_client_id"]
             except KeyError as ex:
-                LOGGER.error("Incorrect response data. Check if check if you add client_id variable to ZohoCRM",
+                LOGGER.error("Incorrect response data. "
+                             "Check if you add client_id variable to ZohoCRM",
                              exc_info=ex)
                 LOGGER.info(response.json()["data"][0])
                 return Response(status=500)
@@ -187,7 +189,7 @@ def respond():
                     try:
                         response = requests.post(
                             url=google_analytics_api_uri +
-                                google_analytics_collect_endpoint,
+                            google_analytics_collect_endpoint,
                             params=params_for_ga)
                         response.raise_for_status()
                     except requests.RequestException as ex:
@@ -217,10 +219,10 @@ def creat_requests():
     # Enable Zoho Notifications
     header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN,
               'Content-type': 'application/json'}
-    LOGGER.info("Zoho-oauthtoken " + _ACCESS_TOKEN)
+    LOGGER.info(msg="Zoho-oauthtoken " + _ACCESS_TOKEN)
     resp = requests.post(
         url=_ZOHO_API_URI +
-            enable_notifications_endpoint,
+        enable_notifications_endpoint,
         headers=header,
         data=json.dumps(request_input_json))
     resp.raise_for_status()
@@ -236,6 +238,7 @@ if __name__ == '__main__':
     try:
         creat_requests()
     except requests.RequestException as ex:
-        LOGGER.error("ZohoCRM does not response. Check selected scopes generating grant_token", exc_info=ex)
+        LOGGER.error("ZohoCRM does not response. Check selected scopes generating grant_token",
+                     exc_info=ex)
     else:
         APP.run(host="0.0.0.0", port=_PORT)
