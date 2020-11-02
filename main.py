@@ -16,7 +16,7 @@ from config import LOG_CONFIG
 
 _ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
 _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, \
-_ZOHO_NOTIFY_URL, _GA_TID, _PORT = "", "", "", "", "", "", ""
+    _ZOHO_NOTIFY_URL, _PORT = "", "", "", "", "", ""
 LOGGER = logging.getLogger()
 
 
@@ -69,7 +69,6 @@ def create_parser():
     parser.add_argument('-api', '--api_uri', default='com')
     public_ip = "http://" + requests.get('http://ipinfo.io/json').json()['ip']
     parser.add_argument('-nu', '--notify_url', default=public_ip)
-    parser.add_argument('-tid', '--ga_tid')
     parser.add_argument('-port', '--port', default='80')
     parser.add_argument('-log', '--logging', default='file')
 
@@ -81,7 +80,7 @@ def initialize_variebles():
     arguments)"""
 
     # change global variebles
-    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, _GA_TID, \
+    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, \
         _PORT, LOGGER
 
     parser = create_parser()
@@ -95,7 +94,6 @@ def initialize_variebles():
     _ZOHO_GRANT_TOKEN = namespace.grant_token
     _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
     _ZOHO_NOTIFY_URL = namespace.notify_url
-    _GA_TID = namespace.ga_tid
     _PORT = namespace.port
 
     LOG_CONFIG['root']['handlers'].append(namespace.logging)
@@ -160,31 +158,44 @@ def respond():
                 headers=auth_header)
             response.raise_for_status()
         except requests.RequestException as ex:
-            LOGGER.error("The application can not get access to Zoho. Check the access token",
-                         exc_info=ex)
+            LOGGER.error(
+                "The application can not get access to Zoho. Check the access token",
+                exc_info=ex)
         else:
             try:
                 current_stage = response.json()["data"][0]["Stage"]
-                LOGGER.info("id=" + ids + ": current stage is " + current_stage)
+                LOGGER.info(
+                    "id=" +
+                    ids +
+                    ": current stage is " +
+                    current_stage)
                 current_google_id = response.json()["data"][0]["GA_client_id"]
+                if current_google_id is None:
+                    LOGGER.warning(
+                        "GA_client_id not finding. Check if you add this field ")
+                ga_property_id = response.json()["data"][0]["GA_property_id"]
+                if ga_property_id is None:
+                    LOGGER.warning(
+                        "GA_property_id not finding. Check if you add this field ")
             except KeyError as ex:
-                LOGGER.error("Incorrect response data. "
-                             "Check if you add client_id variable to ZohoCRM",
-                             exc_info=ex)
+                LOGGER.error(
+                    "Incorrect response data. "
+                    "Check if you add client_id and GA_property_id variable to ZohoCRM",
+                    exc_info=ex)
                 LOGGER.info(response.json()["data"][0])
                 return Response(status=500)
             else:
                 params_for_ga = {
                     "v": "1",
                     "t": "event",
-                    "tid": _GA_TID,
+                    "tid": ga_property_id,
                     "cid": current_google_id,
                     "ec": "zoho_stage_change",
                     "ea": "stage_change",
                     "el": current_stage,
                     "ua": "Opera / 9.80"
                 }
-                data_stage = {current_google_id: current_stage}
+                data_stage = {response.json()["data"][0]["id"]: current_stage}
                 if db_save_stage_info(data_stage):
                     try:
                         response = requests.post(
@@ -193,10 +204,12 @@ def respond():
                             params=params_for_ga)
                         response.raise_for_status()
                     except requests.RequestException as ex:
-                        LOGGER.error("Unable to send post request to Google Analytics", exc_info=ex)
+                        LOGGER.error(
+                            "Unable to send post request to Google Analytics", exc_info=ex)
                         return Response(status=401)
                     else:
-                        LOGGER.info("Update successfully sent to Google Analytic")
+                        LOGGER.info(
+                            "Update successfully sent to Google Analytic")
                 else:
                     LOGGER.info("Stage was not changed. Event was not sent")
     return Response(status=200)
@@ -227,6 +240,7 @@ def creat_requests():
         data=json.dumps(request_input_json))
     resp.raise_for_status()
 
+
 if __name__ == '__main__':
 
     try:
@@ -238,7 +252,8 @@ if __name__ == '__main__':
     try:
         creat_requests()
     except requests.RequestException as ex:
-        LOGGER.error("ZohoCRM does not response. Check selected scopes generating grant_token",
-                     exc_info=ex)
+        LOGGER.error(
+            "ZohoCRM does not response. Check selected scopes generating grant_token",
+            exc_info=ex)
     else:
         APP.run(host="0.0.0.0", port=_PORT)

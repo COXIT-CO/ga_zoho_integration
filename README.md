@@ -21,7 +21,7 @@ zcrmsdk - Python SDK acts as a wrapper for Zoho CRM APIs
 Client app must have Python 2.7 for this library
 
 Users have to generate `ZOHO_GRANT_TOKEN`, so use this Scope:
-'ZohoCRM.notifications.ALL, ZohoCRM.modules.ALL, AAAserver.profile.Read, ZohoCRM.settings.ALL, ZohoCRM.settings.variables.ALL'
+'ZohoCRM.notifications.ALL, ZohoCRM.modules.ALL, AAAserver.profile.Read, ZohoCRM.settings.ALL'
 
 For more detailed instruction read Zoho CRM API Documentation: https://www.zoho.com/crm/developer/docs/api/v2/.
 
@@ -45,16 +45,13 @@ from Zoho CRM
 
 `-cs`: client secret received from CRM app
 
-`-tid`: your GA Tracking ID. The tracking ID  is a segment of the sample "UA-000000-2".
-It must be included in the tracking code to tell Analytics to which account and resource to send data.
-
 `-api`: domain-specific Zoho Accounts URL ending. For example it may be `eu`, `in` or other as specified
  here https://www.zoho.com/crm/developer/docs/api/v2/access-refresh.html. `.com` is default option, no need to specify.
 
 `-port`: port for Zoho CRM notifications Webhook server. By default it's 80.
 To use not 80 port you will need to do additional proxy server set up.
 
-`-log`: mode of logging handling. To enable logging to console pass 'console'. By default it's 'file' 
+`-log`: mode of logging handling. To enable logging to console pass 'console'. By default it's 'file'
 
 For the very first time you will need to specify grant token `-ga`. How to generate it
 follow instruction for Self Client option here https://www.zoho.com/crm/developer/docs/api/v2/auth-request.html.
