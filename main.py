@@ -142,14 +142,16 @@ def creat_params_to_ga(response, ids):
         current_google_id = response.json()["data"][0]["GA_client_id1"]
         if current_google_id is None:
             LOGGER.warning(
-                "GA_client_id is empty. Make sure you populate it in CRM.")
-        LOGGER.info("GA_client_id is found!")
+                "GA_client_id is empty. Make sure you fill in it in CRM.")
+        else:
+            LOGGER.info("GA_client_id is found!")
 
         ga_property_id = response.json()["data"][0]["GA_property_id"]
         if ga_property_id is None:
             LOGGER.warning(
-                "GA_property_id is empty. Make sure you populate it in CRM. ")
-        LOGGER.info("GA_property_id is found")
+                "GA_property_id is empty. Make sure you fill in it in CRM. ")
+        else:
+            LOGGER.info("GA_property_id is found")
 
         params_for_ga = {
             "v": "1",
@@ -166,6 +168,10 @@ def creat_params_to_ga(response, ids):
         if "Closed" in current_stage:
             if "Amount" in response.json()["data"][0]:
                 ev_amount = response.json()["data"][0]["Amount"]
+                if ev_amount is None:
+                    ev_amount = 0
+                    LOGGER.warning(
+                        "Amount is empty. Make sure you fill in it in CRM. ")
                 params_for_ga.update({"ev": ev_amount})
             else:
                 LOGGER.warning(
