@@ -1,4 +1,4 @@
-# pylint: disable=global-statement,import-error,pointless-string-statement,too-many-nested-blocks,too-many-branches,too-many-statements
+# pylint:disable=global-statement,import-error,pointless-string-statement,too-many-nested-blocks,too-many-branches,too-many-statements,too-many-locals
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
 import json
@@ -181,24 +181,17 @@ def respond():
                 else:
                     raise KeyError
 
-                if 'GA_client_id' in response.json()["data"][0]:
-                    current_google_id = response.json()["data"][0]["GA_client_id"]
+                if 'GA_client_id1' in response.json()["data"][0]:
+                    current_google_id = response.json(
+                    )["data"][0]["GA_client_id1"]
                 else:
                     raise KeyError("GA_client_id")
                 if 'GA_property_id' in response.json()["data"][0]:
-                    ga_property_id = response.json()["data"][0]["GA_property_id"]
+                    ga_property_id = response.json(
+                    )["data"][0]["GA_property_id"]
                 else:
                     raise KeyError("GA_property_id")
 
-            except KeyError as ex:
-                if ex.message:
-                    msg = "Incorrect response JSON data. " + "Check if you added " + \
-                    ex.message + " variable to ZohoCRM"
-                else:
-                    msg = "Invalid response JSON data"
-                LOGGER.error(msg)
-                return Response(status=500)
-            else:
                 params_for_ga = {
                     "v": "1",
                     "t": "event",
@@ -207,9 +200,55 @@ def respond():
                     "ec": "zoho_stage_change",
                     "ea": "stage_change",
                     "el": current_stage,
-                    "ua": "Opera / 9.80"
+                    "ua": "Opera / 9.80",
+                    "dp": "ZohoCRM",
                 }
-                data_stage = {response.json()["data"][0]["id"]: current_stage}
+
+                if "Closed" in current_stage:
+                    if "Amount" in response.json()["data"][0]:
+                        ev_amount = response.json()["data"][0]["Amount"]
+                        if ev_amount is None:
+                            ev_amount = 0
+                            LOGGER.warning(
+                                "Amount is empty. Make sure you fill in it in CRM. ")
+                        params_for_ga.update({"ev": ev_amount})
+                    else:
+                        raise KeyError("Amount")
+
+                if "Proposal" in current_stage:
+                    if "Service" in response.json()["data"][0]:
+                        cdi5_service = response.json()["data"][0]["Service"]
+                        params_for_ga.update({"cdi5": cdi5_service})
+                        try:
+                            response = requests.post(
+                                url=google_analytics_api_uri +
+                                google_analytics_collect_endpoint,
+                                params=params_for_ga)
+                            response.raise_for_status()
+                        except requests.RequestException as ex:
+                            LOGGER.error(
+                                "Unable to send post request to Google Analytics" +
+                                "response.status_code = " +
+                                str(
+                                    response.status_code) +
+                                " - " +
+                                response.text,
+                                exc_info=ex)
+                            return Response(status=401)
+                        params_for_ga.update({"ec": "service defined"})
+                    else:
+                        raise KeyError("Service")
+
+            except KeyError as ex:
+                if ex.message:
+                    msg = "Incorrect response JSON data. " + \
+                        "Check if you added " + ex.message + " variable to ZohoCRM"
+                else:
+                    msg = "Invalid response JSON data"
+                LOGGER.error(msg)
+                return Response(status=500)
+            else:
+                data_stage = {ids: current_stage}
                 if db_save_stage_info(data_stage):
                     try:
                         response = requests.post(
