@@ -162,6 +162,8 @@ def respond():
                 "The application can not get access to Zoho. Check the access token",
                 exc_info=ex)
         else:
+            if not response.text:
+                return None
             try:
                 if 'data' in response.json():
                     if response.json()["data"]:
