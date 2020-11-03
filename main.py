@@ -181,9 +181,9 @@ def respond():
                 else:
                     raise KeyError
 
-                if 'GA_client_id1' in response.json()["data"][0]:
+                if 'GA_client_id' in response.json()["data"][0]:
                     current_google_id = response.json(
-                    )["data"][0]["GA_client_id1"]
+                    )["data"][0]["GA_client_id"]
                 else:
                     raise KeyError("GA_client_id")
                 if 'GA_property_id' in response.json()["data"][0]:
