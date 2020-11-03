@@ -163,12 +163,21 @@ def respond():
                 exc_info=ex)
         else:
             try:
-                current_stage = response.json()["data"][0]["Stage"]
-                LOGGER.info(
-                    "id=" +
-                    ids +
-                    ": current stage is " +
-                    current_stage)
+                if 'data' in response.json():
+                    if response.json()["data"]:
+                        if 'Stage' in response.json()["data"][0]:
+                            current_stage = response.json()["data"][0]["Stage"]
+                            LOGGER.info(
+                            "id=" +
+                            ids +
+                            ": current stage is " +
+                            current_stage)
+                        else:
+                            raise KeyError
+                    else:
+                        raise KeyError
+                else:
+                    raise KeyError
 
                 if 'GA_client_id' in response.json()["data"][0]:
                     current_google_id = response.json()["data"][0]["GA_client_id"]
@@ -180,14 +189,14 @@ def respond():
                     raise KeyError("GA_property_id")
 
             except KeyError as ex:
-                LOGGER.error(
-                    "Incorrect response data. "
-                    "Check if you added " + ex.message + " variable to ZohoCRM",)
-                LOGGER.debug(response.json()["data"][0])
+                if ex.message:
+                    msg = "Incorrect response JSON data. " + "Check if you added " + ex.message + " variable to ZohoCRM"
+                else:
+                    msg = "Invalid response JSON data"
+                LOGGER.error(msg)
                 return Response(status=500)
             except ValueError:
                 LOGGER.warning("Invalid response JSON data")
-                LOGGER.debug(response.json()["data"][0])
                 return Response(status=500)
             else:
                 params_for_ga = {
