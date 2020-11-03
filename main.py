@@ -1,4 +1,4 @@
-# pylint: disable=global-statement,import-error,pointless-string-statement
+# pylint: disable=global-statement,import-error,pointless-string-statement,too-many-nested-blocks,too-many-branches,too-many-statements
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
 import json
@@ -170,10 +170,10 @@ def respond():
                         if 'Stage' in response.json()["data"][0]:
                             current_stage = response.json()["data"][0]["Stage"]
                             LOGGER.info(
-                            "id=" +
-                            ids +
-                            ": current stage is " +
-                            current_stage)
+                                "id=" +
+                                ids +
+                                ": current stage is " +
+                                current_stage)
                         else:
                             raise KeyError
                     else:
@@ -192,13 +192,11 @@ def respond():
 
             except KeyError as ex:
                 if ex.message:
-                    msg = "Incorrect response JSON data. " + "Check if you added " + ex.message + " variable to ZohoCRM"
+                    msg = "Incorrect response JSON data. " + "Check if you added " + \
+                    ex.message + " variable to ZohoCRM"
                 else:
                     msg = "Invalid response JSON data"
                 LOGGER.error(msg)
-                return Response(status=500)
-            except ValueError:
-                LOGGER.warning("Invalid response JSON data")
                 return Response(status=500)
             else:
                 params_for_ga = {
