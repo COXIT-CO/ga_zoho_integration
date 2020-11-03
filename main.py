@@ -170,23 +170,24 @@ def respond():
                     ": current stage is " +
                     current_stage)
 
-                current_google_id = response.json()["data"][0]["GA_client_id"]
-                if current_google_id is None:
-                    LOGGER.warning(
-                        "GA_client_id is not found. Make sure you populate it in CRM.")
-                LOGGER.info("GA_client_id is found!")
+                if 'GA_client_id' in response.json()["data"][0]:
+                    current_google_id = response.json()["data"][0]["GA_client_id"]
+                else:
+                    raise KeyError("GA_client_id")
+                if 'GA_property_id' in response.json()["data"][0]:
+                    ga_property_id = response.json()["data"][0]["GA_property_id"]
+                else:
+                    raise KeyError("GA_property_id")
 
-                ga_property_id = response.json()["data"][0]["GA_property_id"]
-                if ga_property_id is None:
-                    LOGGER.warning(
-                        "GA_property_id is not found. Make sure you populate it in CRM. ")
-                LOGGER.info("GA_property_id is found")
             except KeyError as ex:
                 LOGGER.error(
                     "Incorrect response data. "
-                    "Check if you added GA_client_id and GA_property_id variable to ZohoCRM",
-                    exc_info=ex)
-                LOGGER.info(response.json()["data"][0])
+                    "Check if you added " + ex.message + " variable to ZohoCRM",)
+                LOGGER.debug(response.json()["data"][0])
+                return Response(status=500)
+            except ValueError:
+                LOGGER.warning("Invalid response JSON data")
+                LOGGER.debug(response.json()["data"][0])
                 return Response(status=500)
             else:
                 params_for_ga = {
@@ -266,4 +267,4 @@ if __name__ == '__main__':
             "ZohoCRM does not response. Check selected scopes generating grant_token",
             exc_info=ex)
     else:
-        APP.run(host="0.0.0.0", port=_PORT)
+        APP.run(host="127.0.0.1", port=_PORT)
