@@ -1,4 +1,4 @@
-# pylint: disable=global-statement,import-error,pointless-string-statement
+# pylint: disable=global-statement,import-error,pointless-string-statement,too-many-nested-blocks,too-many-branches,too-many-statements
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
 import json
@@ -162,31 +162,41 @@ def respond():
                 "The application can not get access to Zoho. Check the access token",
                 exc_info=ex)
         else:
+            if not response.text:
+                return None
             try:
-                current_stage = response.json()["data"][0]["Stage"]
-                LOGGER.info(
-                    "id=" +
-                    ids +
-                    ": current stage is " +
-                    current_stage)
+                if 'data' in response.json():
+                    if response.json()["data"]:
+                        if 'Stage' in response.json()["data"][0]:
+                            current_stage = response.json()["data"][0]["Stage"]
+                            LOGGER.info(
+                                "id=" +
+                                ids +
+                                ": current stage is " +
+                                current_stage)
+                        else:
+                            raise KeyError
+                    else:
+                        raise KeyError
+                else:
+                    raise KeyError
 
-                current_google_id = response.json()["data"][0]["GA_client_id"]
-                if current_google_id is None:
-                    LOGGER.warning(
-                        "GA_client_id is not found. Make sure you populate it in CRM.")
-                LOGGER.info("GA_client_id is found!")
+                if 'GA_client_id' in response.json()["data"][0]:
+                    current_google_id = response.json()["data"][0]["GA_client_id"]
+                else:
+                    raise KeyError("GA_client_id")
+                if 'GA_property_id' in response.json()["data"][0]:
+                    ga_property_id = response.json()["data"][0]["GA_property_id"]
+                else:
+                    raise KeyError("GA_property_id")
 
-                ga_property_id = response.json()["data"][0]["GA_property_id"]
-                if ga_property_id is None:
-                    LOGGER.warning(
-                        "GA_property_id is not found. Make sure you populate it in CRM. ")
-                LOGGER.info("GA_property_id is found")
             except KeyError as ex:
-                LOGGER.error(
-                    "Incorrect response data. "
-                    "Check if you added GA_client_id and GA_property_id variable to ZohoCRM",
-                    exc_info=ex)
-                LOGGER.info(response.json()["data"][0])
+                if ex.message:
+                    msg = "Incorrect response JSON data. " + "Check if you added " + \
+                    ex.message + " variable to ZohoCRM"
+                else:
+                    msg = "Invalid response JSON data"
+                LOGGER.error(msg)
                 return Response(status=500)
             else:
                 params_for_ga = {
