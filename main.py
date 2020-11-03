@@ -169,18 +169,22 @@ def respond():
                     ids +
                     ": current stage is " +
                     current_stage)
+
                 current_google_id = response.json()["data"][0]["GA_client_id"]
                 if current_google_id is None:
                     LOGGER.warning(
-                        "GA_client_id not finding. Check if you add this field ")
+                        "GA_client_id is not found. Make sure you populate it in CRM.")
+                LOGGER.info("GA_client_id is found!")
+
                 ga_property_id = response.json()["data"][0]["GA_property_id"]
                 if ga_property_id is None:
                     LOGGER.warning(
-                        "GA_property_id not finding. Check if you add this field ")
+                        "GA_property_id is not found. Make sure you populate it in CRM. ")
+                LOGGER.info("GA_property_id is found")
             except KeyError as ex:
                 LOGGER.error(
                     "Incorrect response data. "
-                    "Check if you add client_id and GA_property_id variable to ZohoCRM",
+                    "Check if you added GA_client_id and GA_property_id variable to ZohoCRM",
                     exc_info=ex)
                 LOGGER.info(response.json()["data"][0])
                 return Response(status=500)
@@ -205,7 +209,13 @@ def respond():
                         response.raise_for_status()
                     except requests.RequestException as ex:
                         LOGGER.error(
-                            "Unable to send post request to Google Analytics", exc_info=ex)
+                            "Unable to send post request to Google Analytics" +
+                            "response.status_code = " +
+                            str(
+                                response.status_code) +
+                            " - " +
+                            response.text,
+                            exc_info=ex)
                         return Response(status=401)
                     else:
                         LOGGER.info(

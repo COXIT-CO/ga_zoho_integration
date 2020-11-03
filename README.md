@@ -35,7 +35,7 @@ from Zoho CRM
 
 `python2.7 main.py -gt 1000.ba356065855a909c02543700807d5065.312087b477ec73c1413741a1ad14ef03
 -e email_of_crm_user@email.com -cid 1000.IUOYW5741V7EA7IAV47NGSTUZKJRKU -cs 968c27e883b1c808b3674b7d1a0cb528b92af99cb6
--api com -tid UA-420308-22`
+-api com`
 
 `-gt`: grant token, is required only for the very first run of the script for CRM
 
