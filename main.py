@@ -225,6 +225,7 @@ def respond():
                                 google_analytics_collect_endpoint,
                                 params=params_for_ga)
                             response.raise_for_status()
+                            print "\n",params_for_ga
                         except requests.RequestException as ex:
                             LOGGER.error(
                                 "Unable to send post request to Google Analytics" +
@@ -269,6 +270,7 @@ def respond():
                     else:
                         LOGGER.info(
                             "Update successfully sent to Google Analytic")
+                        print "\n",params_for_ga
                 else:
                     LOGGER.info("Stage was not changed. Event was not sent")
     return Response(status=200)
