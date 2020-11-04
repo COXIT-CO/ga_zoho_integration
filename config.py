@@ -29,7 +29,7 @@ LOG_CONFIG = dict(
                 'level': logging.INFO,
                 'filename': './logs/logfile',
                 'when': 'midnight',
-            }
+            },
     },
     root={
         'handlers': ['file', ],
