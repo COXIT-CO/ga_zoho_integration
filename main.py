@@ -3,6 +3,7 @@
 import argparse
 import json
 import sys
+import os
 from os import path
 
 import logging
@@ -95,6 +96,13 @@ def initialize_variebles():
     _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
     _ZOHO_NOTIFY_URL = namespace.notify_url
     _PORT = namespace.port
+
+    try:
+        os.mkdir("./logs")
+    except OSError:
+        print("Logs directory exists.")
+    else:
+        print("Successfully created the logs directory")
 
     LOG_CONFIG['root']['handlers'].append(namespace.logging)
     dictConfig(LOG_CONFIG)
