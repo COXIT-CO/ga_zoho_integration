@@ -196,15 +196,12 @@ def creat_ga_params(response, ids):
         ": current stage is " +
         current_stage)
 
-    if (check_json_fields("GA_client_id1", response.json()["data"][0])) is False:
-        return params_for_ga, False
-    if check_json_fields("GA_property_id", response.json()["data"][0]) is False:
+    if ((check_json_fields("GA_client_id1", response.json()["data"][0])) is False) or \
+            (check_json_fields("GA_property_id", response.json()["data"][0]) is False):
         return params_for_ga, False
     current_google_id = response.json()["data"][0]["GA_client_id1"]
     ga_property_id = response.json()["data"][0]["GA_property_id"]
-    if current_google_id or ga_property_id is None:
-        return params_for_ga, False
-    if ga_property_id is None:
+    if(current_google_id is None) or (ga_property_id is None):
         return params_for_ga, False
     params_for_ga.update({"cid": current_google_id})
     params_for_ga.update({"tid": ga_property_id})
