@@ -171,7 +171,7 @@ def respond():
                 exc_info=ex)
         else:
             if not response.text:
-                return None
+                return Response(status=500)
             try:
                 if 'data' in response.json():
                     if response.json()["data"]:
