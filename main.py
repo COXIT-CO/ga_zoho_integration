@@ -100,9 +100,9 @@ def initialize_variebles():
     try:
         os.mkdir("./logs")
     except OSError:
-        print("Logs directory exists.")
+        print"Logs directory exists."
     else:
-        print("Successfully created the logs directory")
+        print"Successfully created the logs directory"
 
     LOG_CONFIG['root']['handlers'].append(namespace.logging)
     dictConfig(LOG_CONFIG)
