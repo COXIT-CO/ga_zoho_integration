@@ -185,7 +185,7 @@ def creat_ga_params(response, ids):
         "dp": "ZohoCRM",
     }
 
-    if check_json_fields("GA_client_id1", response.json()["data"][0]) is False:
+    if check_json_fields("Stage", response.json()["data"][0]) is False:
         return params_for_ga, False
     current_stage = response.json()["data"][0]["Stage"]
     params_for_ga.update({"el": current_stage})
@@ -196,12 +196,15 @@ def creat_ga_params(response, ids):
         ": current stage is " +
         current_stage)
 
-    if (check_json_fields("GA_client_id", response.json()["data"][0])) is False:
-        if check_json_fields("GA_property_id", response.json()["data"][0]) is False:
-            return params_for_ga, False
-    current_google_id = response.json()["data"][0]["GA_client_id"]
+    if (check_json_fields("GA_client_id1", response.json()["data"][0])) is False:
+        return params_for_ga, False
+    if check_json_fields("GA_property_id", response.json()["data"][0]) is False:
+        return params_for_ga, False
+    current_google_id = response.json()["data"][0]["GA_client_id1"]
     ga_property_id = response.json()["data"][0]["GA_property_id"]
-    if current_google_id and ga_property_id is None:
+    if current_google_id or ga_property_id is None:
+        return params_for_ga, False
+    if ga_property_id is None:
         return params_for_ga, False
     params_for_ga.update({"cid": current_google_id})
     params_for_ga.update({"tid": ga_property_id})
@@ -221,7 +224,6 @@ def creat_ga_params(response, ids):
         params_for_ga.update({"cdi5": cdi5_service})
         ga_request(response, params_for_ga)
         params_for_ga.update({"ec": "service defined"})
-
     return params_for_ga, True
 
 
@@ -258,9 +260,8 @@ def respond():
                 "The application can not get access to Zoho. Check the access token",
                 exc_info=ex)
         else:
-
             params_for_ga, log_flag = creat_ga_params(response, ids)
-            if not log_flag:
+            if log_flag is False:
                 return Response(status=500)
             data_stage = {response.json()["data"][0]["id"]: params_for_ga["el"]}
             if stage_changes(data_stage):
