@@ -1,6 +1,15 @@
 """Configuration module for logging"""
 import logging
+from os import mkdir
 
+def mkdir_log():
+    try:
+        mkdir("./logs")
+    except OSError:
+        print"Logs directory exists."
+    else:
+        print"Successfully created the logs directory"
+    return "./logs"
 LOG_CONFIG = dict(
     version=1,
     formatters={
@@ -27,7 +36,7 @@ LOG_CONFIG = dict(
                 'class': 'logging.handlers.TimedRotatingFileHandler',
                 'formatter': 'detailed',
                 'level': logging.INFO,
-                'filename': './logs/logfile',
+                'filename': mkdir_log()+'logfile',
                 'when': 'midnight',
             },
     },
@@ -37,3 +46,4 @@ LOG_CONFIG = dict(
 
     },
 )
+
