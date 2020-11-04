@@ -2,15 +2,15 @@
 import logging
 from os import mkdir
 
-LOG_DIR = "./logs"
+LOG_DIR = "./logs/"
 
-def mkdir_log():
-    try:
-        mkdir(LOG_DIR)
-    except OSError:
-        print"Logs directory exists."
-    else:
-        print"Successfully created the logs directory"
+try:
+    mkdir(LOG_DIR)
+except OSError:
+    print("Logs directory exists.")
+else:
+    print("Successfully created the logs directory")
+
 
 LOG_CONFIG = dict(
     version=1,
