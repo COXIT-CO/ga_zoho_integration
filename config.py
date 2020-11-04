@@ -7,9 +7,9 @@ LOG_DIR = "./logs/"
 try:
     mkdir(LOG_DIR)
 except OSError:
-    print("Logs directory exists.")
+    print"Logs directory exists."
 else:
-    print("Successfully created the logs directory")
+    print"Successfully created the logs directory"
 
 
 LOG_CONFIG = dict(
