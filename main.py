@@ -1,4 +1,4 @@
-# pylint: disable=global-statement,import-error,logging-not-lazy,too-many-return-statements
+# pylint: disable=global-statement,import-error,
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
 import json
@@ -37,7 +37,7 @@ def compare_change_in_data(old_data, new_data):
     return flag
 
 
-def db_save_stage_info(new_data):
+def stage_changes(new_data):
     """Save and compare data about stage in json file"""
     flag = True
     try:
@@ -133,19 +133,19 @@ def check_json_fields(name_field, data_json):
     """"write logs if bad fields"""
     if name_field in data_json:
         if data_json[name_field] is not None:
-            LOGGER.info(name_field + " is found!")
+            LOGGER.info("%s is found!", name_field)
             return True
         else:
             LOGGER.warning(
-                name_field + " is empty. Make sure you fill in it in CRM.")
+                "%s is empty. Make sure you fill in it in CRM.", name_field)
     else:
         LOGGER.warning(
-            name_field + " is not found. Make sure you populate it in CRM.")
+            "%s is not found. Make sure you populate it in CRM.", name_field)
         return False
     return True
 
 
-def requst_for_ga(response, params_for_ga):
+def ga_request(response, params_for_ga):
     """"make requst to google anylitics"""
     google_analytics_api_uri = "https://www.google-analytics.com"
     google_analytics_collect_endpoint = "/collect"
@@ -173,19 +173,22 @@ def requst_for_ga(response, params_for_ga):
         return Response(status=200)
 
 
-def creat_params_to_ga(response, ids):
+def creat_ga_params(response, ids):
     """"Varification for stage and creat parameters for GA requst"""
-    current_stage = response.json()["data"][0]["Stage"]
 
     params_for_ga = {
         "v": "1",
         "t": "event",
         "ec": "zoho_stage_change",
         "ea": "stage_change",
-        "el": current_stage,
         "ua": "Opera / 9.80",
         "dp": "ZohoCRM",
     }
+
+    if check_json_fields("GA_client_id1", response.json()["data"][0]) is False:
+        return params_for_ga, False
+    current_stage = response.json()["data"][0]["Stage"]
+    params_for_ga.update({"el": current_stage})
 
     LOGGER.info(
         "id=" +
@@ -193,18 +196,14 @@ def creat_params_to_ga(response, ids):
         ": current stage is " +
         current_stage)
 
-    if check_json_fields("GA_client_id1", response.json()["data"][0]) is False:
-        return params_for_ga, False
-    current_google_id = response.json()["data"][0]["GA_client_id1"]
-    if current_google_id is None:
+    if (check_json_fields("GA_client_id", response.json()["data"][0])) is False:
+        if check_json_fields("GA_property_id", response.json()["data"][0]) is False:
+            return params_for_ga, False
+    current_google_id = response.json()["data"][0]["GA_client_id"]
+    ga_property_id = response.json()["data"][0]["GA_property_id"]
+    if current_google_id and ga_property_id is None:
         return params_for_ga, False
     params_for_ga.update({"cid": current_google_id})
-
-    if check_json_fields("GA_property_id", response.json()["data"][0]) is False:
-        return params_for_ga, False
-    ga_property_id = response.json()["data"][0]["GA_property_id"]
-    if ga_property_id is None:
-        return params_for_ga, False
     params_for_ga.update({"tid": ga_property_id})
 
     if "Closed" in current_stage:
@@ -220,7 +219,7 @@ def creat_params_to_ga(response, ids):
             return params_for_ga, False
         cdi5_service = response.json()["data"][0]["Service"]
         params_for_ga.update({"cdi5": cdi5_service})
-        requst_for_ga(response, params_for_ga)
+        ga_request(response, params_for_ga)
         params_for_ga.update({"ec": "service defined"})
 
     return params_for_ga, True
@@ -230,7 +229,7 @@ def creat_params_to_ga(response, ids):
 def respond():
     """generate post request to google analytics  """
 
-    #creating _ACCESS_TOKEN and we check: how init this token
+    # creating _ACCESS_TOKEN and we check: how init this token
     global _ACCESS_TOKEN
     try:
         oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
@@ -239,8 +238,10 @@ def respond():
         LOGGER.error("Unable to refresh access token", exc_info=ex)
         return Response(status=500)
 
-    #getting deals records
+    # getting deals records
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
+    if "module" not in request.json:
+        return Response(status=500)
     module = request.json["module"]
     for ids in request.json["ids"]:
         try:
@@ -257,13 +258,13 @@ def respond():
                 "The application can not get access to Zoho. Check the access token",
                 exc_info=ex)
         else:
-            current_stage = response.json()["data"][0]["Stage"]
-            params_for_ga, log_flag = creat_params_to_ga(response, ids)
+
+            params_for_ga, log_flag = creat_ga_params(response, ids)
             if not log_flag:
                 return Response(status=500)
-            data_stage = {response.json()["data"][0]["id"]: current_stage}
-            if db_save_stage_info(data_stage):
-                requst_for_ga(response, params_for_ga)
+            data_stage = {response.json()["data"][0]["id"]: params_for_ga["el"]}
+            if stage_changes(data_stage):
+                ga_request(response, params_for_ga)
             else:
                 LOGGER.info("Stage was not changed. Event was not sent")
     return Response(status=200)
