@@ -2,14 +2,16 @@
 import logging
 from os import mkdir
 
+LOG_DIR = "./logs"
+
 def mkdir_log():
     try:
-        mkdir("./logs")
+        mkdir(LOG_DIR)
     except OSError:
         print"Logs directory exists."
     else:
         print"Successfully created the logs directory"
-    return "./logs"
+
 LOG_CONFIG = dict(
     version=1,
     formatters={
@@ -36,7 +38,7 @@ LOG_CONFIG = dict(
                 'class': 'logging.handlers.TimedRotatingFileHandler',
                 'formatter': 'detailed',
                 'level': logging.INFO,
-                'filename': mkdir_log()+'logfile',
+                'filename': LOG_DIR+'logfile',
                 'when': 'midnight',
             },
     },
@@ -46,4 +48,3 @@ LOG_CONFIG = dict(
 
     },
 )
-
