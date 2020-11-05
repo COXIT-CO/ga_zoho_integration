@@ -1,4 +1,4 @@
-# pylint: disable=global-statement,import-error,
+# pylint: disable=global-statement,import-error,too-many-return-statements
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
 import json
@@ -97,8 +97,8 @@ def initialize_variebles():
     _PORT = namespace.port
 
     LOG_CONFIG['root']['handlers'].append(namespace.logging)
-    FLASK_LOG = logging.getLogger('werkzeug')
-    FLASK_LOG.setLevel(logging.ERROR)
+    flask_log = logging.getLogger('werkzeug')
+    flask_log.setLevel(logging.ERROR)
     dictConfig(LOG_CONFIG)
     LOGGER = logging.getLogger()
 
