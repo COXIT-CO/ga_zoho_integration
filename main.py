@@ -168,7 +168,6 @@ def ga_request(response, params_for_ga):
             exc_info=ex)
         return Response(status=401)
     else:
-        print "Update successfully sent to Google Analytic"
         LOGGER.info(
             "Update successfully sent to Google Analytic")
         return Response(status=200)
