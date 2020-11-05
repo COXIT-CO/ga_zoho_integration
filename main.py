@@ -294,7 +294,6 @@ def respond():
                 "The application can not get access to Zoho. Check the access token",
                 exc_info=ex)
         else:
-            print response.json()
             params_for_ga, log_flag = creat_ga_params(response, ids)
             if log_flag is False:
                 return Response(status=500)
