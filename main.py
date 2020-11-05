@@ -163,21 +163,17 @@ def respond():
                 exc_info=ex)
         else:
             if not response.text:
-                return None
+                return Response(status=500)
             try:
-                if 'data' in response.json():
-                    if response.json()["data"]:
-                        if 'Stage' in response.json()["data"][0]:
-                            current_stage = response.json()["data"][0]["Stage"]
-                            LOGGER.info(
-                                "id=" +
-                                ids +
-                                ": current stage is " +
-                                current_stage)
-                        else:
-                            raise KeyError
-                    else:
-                        raise KeyError
+                if 'data' in response.json() \
+                        and response.json()["data"] \
+                        and 'Stage' in response.json()["data"][0]:
+                    current_stage = response.json()["data"][0]["Stage"]
+                    LOGGER.info(
+                        "id=" +
+                        ids +
+                        ": current stage is " +
+                        current_stage)
                 else:
                     raise KeyError
 
