@@ -45,6 +45,5 @@ LOG_CONFIG = dict(
     root={
         'handlers': ['file', ],
         'level': logging.INFO,
-
     },
 )

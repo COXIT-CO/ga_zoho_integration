@@ -1,4 +1,4 @@
-# pylint: disable=global-statement,import-error,pointless-string-statement,too-many-nested-blocks,too-many-branches,too-many-statements
+# pylint: disable=global-statement,import-error,too-many-return-statements
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
 import json
@@ -37,7 +37,7 @@ def compare_change_in_data(old_data, new_data):
     return flag
 
 
-def db_save_stage_info(new_data):
+def stage_changes(new_data):
     """Save and compare data about stage in json file"""
     flag = True
     try:
@@ -97,6 +97,8 @@ def initialize_variebles():
     _PORT = namespace.port
 
     LOG_CONFIG['root']['handlers'].append(namespace.logging)
+    flask_log = logging.getLogger('werkzeug')
+    flask_log.setLevel(logging.ERROR)
     dictConfig(LOG_CONFIG)
     LOGGER = logging.getLogger()
 
@@ -129,13 +131,109 @@ def creat_init_access_token():
 APP = Flask(__name__)
 
 
+def check_json_fields(name_field, data_json):
+    """"write logs if bad fields"""
+    if name_field in data_json:
+        if data_json[name_field] is not None:
+            LOGGER.info("%s is found!", name_field)
+            return True
+        else:
+            LOGGER.warning(
+                "%s is empty. Make sure you fill in it in CRM.", name_field)
+    else:
+        LOGGER.warning(
+            "%s is not found. Make sure you populate it in CRM.", name_field)
+        return False
+    return True
+
+
+def ga_request(response, params_for_ga):
+    """"make requst to google anylitics"""
+    google_analytics_api_uri = "https://www.google-analytics.com"
+    google_analytics_collect_endpoint = "/collect"
+    try:
+        print "parameters for GA:\n", params_for_ga
+        response = requests.post(
+            url=google_analytics_api_uri +
+            google_analytics_collect_endpoint,
+            params=params_for_ga)
+
+        response.raise_for_status()
+    except requests.RequestException as ex:
+        LOGGER.error(
+            "Unable to send post request to Google Analytics" +
+            "response.status_code = " +
+            str(
+                response.status_code) +
+            " - " +
+            response.text,
+            exc_info=ex)
+        return Response(status=401)
+    else:
+        LOGGER.info(
+            "Update successfully sent to Google Analytic")
+        return Response(status=200)
+
+
+def creat_ga_params(response, ids):
+    """"Varification for stage and creat parameters for GA requst"""
+
+    params_for_ga = {
+        "v": "1",
+        "t": "event",
+        "ec": "zoho_stage_change",
+        "ea": "stage_change",
+        "ua": "Opera / 9.80",
+        "dp": "ZohoCRM",
+    }
+    try:
+        if check_json_fields("Stage", response.json()["data"][0]) is False:
+            return params_for_ga, False
+        current_stage = response.json()["data"][0]["Stage"]
+        params_for_ga.update({"el": current_stage})
+    except ValueError:
+        LOGGER.error("Incorrect response JSON data")
+        return params_for_ga, False
+
+    LOGGER.info(
+        "id=" +
+        ids +
+        ": current stage is " +
+        current_stage)
+
+    if ((check_json_fields("GA_client_id", response.json()["data"][0])) is False) or \
+            (check_json_fields("GA_property_id", response.json()["data"][0]) is False):
+        return params_for_ga, False
+    current_google_id = response.json()["data"][0]["GA_client_id"]
+    ga_property_id = response.json()["data"][0]["GA_property_id"]
+    if(current_google_id is None) or (ga_property_id is None):
+        return params_for_ga, False
+    params_for_ga.update({"cid": current_google_id})
+    params_for_ga.update({"tid": ga_property_id})
+
+    if "Closed" in current_stage:
+        if check_json_fields("Amount", response.json()["data"][0]) is False:
+            return params_for_ga, False
+        ev_amount = response.json()["data"][0]["Amount"]
+        if ev_amount is None:
+            ev_amount = 0
+        params_for_ga.update({"ev": ev_amount})
+
+    if "Proposal" in current_stage:
+        if check_json_fields("Service", response.json()["data"][0]) is False:
+            return params_for_ga, False
+        cdi5_service = response.json()["data"][0]["Service"]
+        params_for_ga.update({"cdi5": cdi5_service})
+        ga_request(response, params_for_ga)
+        params_for_ga.update({"ec": "service defined"})
+    return params_for_ga, True
+
+
 @APP.route(_ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
 def respond():
     """generate post request to google analytics  """
-    google_analytics_api_uri = "https://www.google-analytics.com"
-    google_analytics_collect_endpoint = "/collect"
 
-    """creating _ACCESS_TOKEN and we check: how init this token """
+    # creating _ACCESS_TOKEN and we check: how init this token
     global _ACCESS_TOKEN
     try:
         oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
@@ -144,8 +242,10 @@ def respond():
         LOGGER.error("Unable to refresh access token", exc_info=ex)
         return Response(status=500)
 
-    """ getting deals records """
+    # getting deals records
     auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
+    if "module" not in request.json:
+        return Response(status=500)
     module = request.json["module"]
     for ids in request.json["ids"]:
         try:
@@ -162,72 +262,14 @@ def respond():
                 "The application can not get access to Zoho. Check the access token",
                 exc_info=ex)
         else:
-            if not response.text:
+            params_for_ga, log_flag = creat_ga_params(response, ids)
+            if log_flag is False:
                 return Response(status=500)
-            try:
-                if 'data' in response.json() \
-                        and response.json()["data"] \
-                        and 'Stage' in response.json()["data"][0]:
-                    current_stage = response.json()["data"][0]["Stage"]
-                    LOGGER.info(
-                        "id=" +
-                        ids +
-                        ": current stage is " +
-                        current_stage)
-                else:
-                    raise KeyError
-
-                if 'GA_client_id' in response.json()["data"][0]:
-                    current_google_id = response.json()["data"][0]["GA_client_id"]
-                else:
-                    raise KeyError("GA_client_id")
-                if 'GA_property_id' in response.json()["data"][0]:
-                    ga_property_id = response.json()["data"][0]["GA_property_id"]
-                else:
-                    raise KeyError("GA_property_id")
-
-            except KeyError as ex:
-                if ex.message:
-                    msg = "Incorrect response JSON data. " + "Check if you added " + \
-                    ex.message + " variable to ZohoCRM"
-                else:
-                    msg = "Invalid response JSON data"
-                LOGGER.error(msg)
-                return Response(status=500)
+            data_stage = {response.json()["data"][0]["id"]: params_for_ga["el"]}
+            if stage_changes(data_stage):
+                ga_request(response, params_for_ga)
             else:
-                params_for_ga = {
-                    "v": "1",
-                    "t": "event",
-                    "tid": ga_property_id,
-                    "cid": current_google_id,
-                    "ec": "zoho_stage_change",
-                    "ea": "stage_change",
-                    "el": current_stage,
-                    "ua": "Opera / 9.80"
-                }
-                data_stage = {response.json()["data"][0]["id"]: current_stage}
-                if db_save_stage_info(data_stage):
-                    try:
-                        response = requests.post(
-                            url=google_analytics_api_uri +
-                            google_analytics_collect_endpoint,
-                            params=params_for_ga)
-                        response.raise_for_status()
-                    except requests.RequestException as ex:
-                        LOGGER.error(
-                            "Unable to send post request to Google Analytics" +
-                            "response.status_code = " +
-                            str(
-                                response.status_code) +
-                            " - " +
-                            response.text,
-                            exc_info=ex)
-                        return Response(status=401)
-                    else:
-                        LOGGER.info(
-                            "Update successfully sent to Google Analytic")
-                else:
-                    LOGGER.info("Stage was not changed. Event was not sent")
+                LOGGER.info("Stage was not changed. Event was not sent")
     return Response(status=200)
 
 

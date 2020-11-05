@@ -40,7 +40,7 @@ class TestFunct(unittest.TestCase):
     def test_compare_new_data_return_true(self):
         """test funct save new data"""
         test_data = {"1": "test"}
-        flag = m.db_save_stage_info(test_data)
+        flag = m.stage_changes(test_data)
         self.assertEqual(flag, True)
 
 
