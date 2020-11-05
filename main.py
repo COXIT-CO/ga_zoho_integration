@@ -96,8 +96,7 @@ def initialize_variebles():
     _ZOHO_NOTIFY_URL = namespace.notify_url
     _PORT = namespace.port
 
-    LOG_CONFIG['root']['handlers'].append(namespace.logging)
-    LOG_CONFIG['werkzeug']['handlers'].append(namespace.logging)
+    LOG_CONFIG['loggers']['root']['handlers'].append(namespace.logging)
     dictConfig(LOG_CONFIG)
     LOGGER = logging.getLogger()
 

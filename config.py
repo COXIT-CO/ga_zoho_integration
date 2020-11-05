@@ -31,12 +31,15 @@ LOG_CONFIG = dict(
                 'when': 'midnight',
             },
     },
-    root={
-        'handlers': ['file', ],
-        'level': logging.INFO,
+    loggers={
+        'root':
+            {
+                'handlers': ['file', ],
+                'level': logging.INFO,
+            },
+        'werkzeug':
+            {
+                'level': logging.ERROR,
+            },
     },
-    werkzeug={
-        'level': logging.ERROR,
-        'handlers': ['file', ],
-    }
 )
