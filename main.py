@@ -1,6 +1,7 @@
 # pylint: disable=global-statement,import-error,too-many-return-statements
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
+import datetime
 import json
 import sys
 from os import path
@@ -306,11 +307,13 @@ def creat_requests():
     """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
-
+    notifications_expiration_time = datetime.datetime.now() + datetime.timedelta(days=1)
+    LOGGER.warning("Notifications channel will expire at " + notifications_expiration_time.isoformat())
     request_input_json = {
         "watch": [
             {
                 "channel_id": "1000000068002",
+                "channel_expiry": notifications_expiration_time.isoformat(),
                 "events": ["Deals.edit"],
                 "token": "TOKEN_FOR_VERIFICATION_OF_1000000068002",
                 "notify_url": notify_url,
