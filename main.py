@@ -174,6 +174,39 @@ def ga_request(response, params_for_ga):
             "Update successfully sent to Google Analytic")
         return Response(status=200)
 
+def when_deal_in_closed_block(response, params_for_ga):
+    """"make exclusive ga params change when deals in block CLOSED"""
+    if check_json_fields("Amount", response.json()["data"][0]) is False:
+        return False
+    cd9 = response.json()["data"][0]["Amount"]
+    if cd9 is None:
+        ev_amount = 0
+    params_for_ga.update({"cd9": cd9})
+
+    if (check_json_fields("Service", response.json()["data"][0]) is False) or \
+            (check_json_fields("Sub service", response.json()["data"][0]) is False):
+        return False
+    cd5 = response.json()["data"][0]["Service"]
+    params_for_ga.update({"cd5": cd5})
+    cd6 = response.json()["data"][0]["Sub service"]
+    params_for_ga.update({"cd6": cd6})
+
+    if check_json_fields("Good Inquiry", response.json()["data"][0]) is False:
+        return False
+    cd7 = response.json()["data"][0]["Good Inquiry"]
+    params_for_ga.update({"cd7": cd7})
+
+    if check_json_fields("Deal Size", response.json()["data"][0]) is False:
+        return False
+    cd8 = response.json()["data"][0]["Deal Size"]
+    params_for_ga.update({"cd8": cd8})
+
+    if check_json_fields("ids", response.json()["data"][0]) is False:
+        return False
+    cd2= response.json()["data"][0]["ids"]
+    params_for_ga.update({"cd2": cd2})
+
+    return True
 
 def creat_ga_params(response, ids):
     """"Varification for stage and creat parameters for GA requst"""
@@ -201,10 +234,10 @@ def creat_ga_params(response, ids):
         ": current stage is " +
         current_stage)
 
-    if ((check_json_fields("GA_client_id", response.json()["data"][0])) is False) or \
+    if ((check_json_fields("GA_client_id1", response.json()["data"][0])) is False) or \
             (check_json_fields("GA_property_id", response.json()["data"][0]) is False):
         return params_for_ga, False
-    current_google_id = response.json()["data"][0]["GA_client_id"]
+    current_google_id = response.json()["data"][0]["GA_client_id1"]
     ga_property_id = response.json()["data"][0]["GA_property_id"]
     if(current_google_id is None) or (ga_property_id is None):
         return params_for_ga, False
@@ -212,20 +245,19 @@ def creat_ga_params(response, ids):
     params_for_ga.update({"tid": ga_property_id})
 
     if "Closed" in current_stage:
-        if check_json_fields("Amount", response.json()["data"][0]) is False:
+        if when_deal_in_closed_block(response, params_for_ga) is False:
             return params_for_ga, False
-        ev_amount = response.json()["data"][0]["Amount"]
-        if ev_amount is None:
-            ev_amount = 0
-        params_for_ga.update({"ev": ev_amount})
 
-    if "Proposal" in current_stage:
-        if check_json_fields("Service", response.json()["data"][0]) is False:
+    if "Disqualified" in current_stage:
+        if check_json_fields("Reason for Disqualify", response.json()["data"][0]) is False:
             return params_for_ga, False
-        cdi5_service = response.json()["data"][0]["Service"]
-        params_for_ga.update({"cdi5": cdi5_service})
+        cd10 = response.json()["data"][0]["Reason for Disqualify"]
+        params_for_ga.update({"cd10": cd10})
         ga_request(response, params_for_ga)
-        params_for_ga.update({"ec": "service defined"})
+        params_for_ga.update({"ec": "crm_details_defined"})
+        params_for_ga.update({"ea": "Reason for Disqualify defined"})
+        params_for_ga.update({"el": cd10})
+
     return params_for_ga, True
 
 
