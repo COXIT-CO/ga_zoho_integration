@@ -249,8 +249,8 @@ def creat_ga_params(response, ids):
         if check_json_fields("Reason_to_Disqualify", response.json()["data"][0]) is False:
             return params_for_ga, False
         cd10 = response.json()["data"][0]["Reason_to_Disqualify"]
-        params_for_ga.update({"cd10": cd10})
         ga_request(response, params_for_ga)
+        params_for_ga.update({"cd10": cd10})
         params_for_ga.update({"ec": "crm_details_defined"})
         params_for_ga.update({"ea": "Reason for Disqualify defined"})
         params_for_ga.update({"el": cd10})
