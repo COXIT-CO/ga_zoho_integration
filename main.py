@@ -97,6 +97,7 @@ def initialize_variebles():
     _PORT = namespace.port
 
     LOG_CONFIG['root']['handlers'].append(namespace.logging)
+    LOG_CONFIG['werkzeug']['handlers'].append(namespace.logging)
     dictConfig(LOG_CONFIG)
     LOGGER = logging.getLogger()
 
