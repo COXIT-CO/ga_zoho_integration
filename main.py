@@ -203,7 +203,7 @@ def when_deal_in_closed_block(response, params_for_ga):
 
     if check_json_fields("ids", response.json()["data"][0]) is False:
         return False
-    cd2 = response.json()["data"][0]["id"]
+    cd2 = response.json()["data"][0]["ids"]
     params_for_ga.update({"cd2": cd2})
 
     return True
@@ -279,7 +279,7 @@ def respond():
     if "module" not in request.json:
         return Response(status=500)
     module = request.json["module"]
-    for ids in request.json["id"]:
+    for ids in request.json["ids"]:
         try:
             response = requests.get(
                 url=_ZOHO_API_URI +
