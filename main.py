@@ -180,30 +180,30 @@ def when_deal_in_closed_block(response, params_for_ga):
         return False
     cd9 = response.json()["data"][0]["Amount"]
     if cd9 is None:
-        ev_amount = 0
+        cd9 = 0
     params_for_ga.update({"cd9": cd9})
 
     if (check_json_fields("Service", response.json()["data"][0]) is False) or \
-            (check_json_fields("Sub service", response.json()["data"][0]) is False):
+            (check_json_fields("Sub_Service", response.json()["data"][0]) is False):
         return False
     cd5 = response.json()["data"][0]["Service"]
     params_for_ga.update({"cd5": cd5})
-    cd6 = response.json()["data"][0]["Sub service"]
+    cd6 = response.json()["data"][0]["Sub_Service"]
     params_for_ga.update({"cd6": cd6})
 
-    if check_json_fields("Good Inquiry", response.json()["data"][0]) is False:
+    if check_json_fields("Good_Inquiry", response.json()["data"][0]) is False:
         return False
-    cd7 = response.json()["data"][0]["Good Inquiry"]
+    cd7 = response.json()["data"][0]["Good_Inquiry"]
     params_for_ga.update({"cd7": cd7})
 
-    if check_json_fields("Deal Size", response.json()["data"][0]) is False:
+    if check_json_fields("Deal_Size", response.json()["data"][0]) is False:
         return False
-    cd8 = response.json()["data"][0]["Deal Size"]
+    cd8 = response.json()["data"][0]["Deal_Size"]
     params_for_ga.update({"cd8": cd8})
 
     if check_json_fields("ids", response.json()["data"][0]) is False:
         return False
-    cd2= response.json()["data"][0]["ids"]
+    cd2 = response.json()["data"][0]["id"]
     params_for_ga.update({"cd2": cd2})
 
     return True
@@ -249,9 +249,9 @@ def creat_ga_params(response, ids):
             return params_for_ga, False
 
     if "Disqualified" in current_stage:
-        if check_json_fields("Reason for Disqualify", response.json()["data"][0]) is False:
+        if check_json_fields("Reason_to_Disqualify", response.json()["data"][0]) is False:
             return params_for_ga, False
-        cd10 = response.json()["data"][0]["Reason for Disqualify"]
+        cd10 = response.json()["data"][0]["Reason_to_Disqualify"]
         params_for_ga.update({"cd10": cd10})
         ga_request(response, params_for_ga)
         params_for_ga.update({"ec": "crm_details_defined"})
@@ -279,7 +279,7 @@ def respond():
     if "module" not in request.json:
         return Response(status=500)
     module = request.json["module"]
-    for ids in request.json["ids"]:
+    for ids in request.json["id"]:
         try:
             response = requests.get(
                 url=_ZOHO_API_URI +
@@ -294,6 +294,7 @@ def respond():
                 "The application can not get access to Zoho. Check the access token",
                 exc_info=ex)
         else:
+            print response.json()
             params_for_ga, log_flag = creat_ga_params(response, ids)
             if log_flag is False:
                 return Response(status=500)
