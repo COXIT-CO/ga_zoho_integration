@@ -185,12 +185,12 @@ def creat_ga_params(response, ids):
         "ua": "Opera / 9.80",
         "dp": "ZohoCRM",
     }
-    if 'data' in response.json() and response.json()["data"]:
+    try:
         if check_json_fields("Stage", response.json()["data"][0]) is False:
             return params_for_ga, False
         current_stage = response.json()["data"][0]["Stage"]
         params_for_ga.update({"el": current_stage})
-    else:
+    except ValueError:
         LOGGER.error("Incorrect response JSON data")
         return params_for_ga, False
 
