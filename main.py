@@ -150,6 +150,7 @@ def ga_request(response, params_for_ga):
     google_analytics_api_uri = "https://www.google-analytics.com"
     google_analytics_collect_endpoint = "/collect"
     try:
+        print "parameters for GA:\n", params_for_ga
         response = requests.post(
             url=google_analytics_api_uri +
             google_analytics_collect_endpoint,
@@ -184,11 +185,14 @@ def creat_ga_params(response, ids):
         "ua": "Opera / 9.80",
         "dp": "ZohoCRM",
     }
-
-    if check_json_fields("Stage", response.json()["data"][0]) is False:
+    if 'data' in response.json() and response.json()["data"]:
+        if check_json_fields("Stage", response.json()["data"][0]) is False:
+            return params_for_ga, False
+        current_stage = response.json()["data"][0]["Stage"]
+        params_for_ga.update({"el": current_stage})
+    else:
+        LOGGER.error("Incorrect response JSON data")
         return params_for_ga, False
-    current_stage = response.json()["data"][0]["Stage"]
-    params_for_ga.update({"el": current_stage})
 
     LOGGER.info(
         "id=" +
