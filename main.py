@@ -174,7 +174,7 @@ def ga_request(response, params_for_ga):
             "Update successfully sent to Google Analytic")
         return Response(status=200)
 
-def when_deal_in_closed_block(response, params_for_ga):
+def when_deal_in_closed_block(response, params_for_ga, ids):
     """"make exclusive ga params change when deals in block CLOSED"""
     if check_json_fields("Amount", response.json()["data"][0]) is False:
         return False
@@ -201,10 +201,7 @@ def when_deal_in_closed_block(response, params_for_ga):
     cd8 = response.json()["data"][0]["Deal_Size"]
     params_for_ga.update({"cd8": cd8})
 
-    if check_json_fields("ids", response.json()["data"][0]) is False:
-        return False
-    cd2 = response.json()["data"][0]["ids"]
-    params_for_ga.update({"cd2": cd2})
+    params_for_ga.update({"cd2": ids})
 
     return True
 
@@ -245,7 +242,7 @@ def creat_ga_params(response, ids):
     params_for_ga.update({"tid": ga_property_id})
 
     if "Closed" in current_stage:
-        if when_deal_in_closed_block(response, params_for_ga) is False:
+        if when_deal_in_closed_block(response, params_for_ga, ids) is False:
             return params_for_ga, False
 
     if "Disqualified" in current_stage:
@@ -294,7 +291,6 @@ def respond():
                 "The application can not get access to Zoho. Check the access token",
                 exc_info=ex)
         else:
-            print response.json()
             params_for_ga, log_flag = creat_ga_params(response, ids)
             if log_flag is False:
                 return Response(status=500)
