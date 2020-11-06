@@ -2,13 +2,15 @@
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
 from datetime import datetime, timedelta
-import pytz
+import time
+import  threading
 import json
 import sys
 from os import path
 
 import logging
 from logging.config import dictConfig
+import pytz
 
 import requests
 import zcrmsdk as zoho_crm
@@ -310,7 +312,7 @@ def enable_notifications():
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
     notifications_expiration_time = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
     expiration_time_iso_format = notifications_expiration_time.replace(tzinfo=pytz.utc).isoformat()
-    LOGGER.warning("Notifications channel will expire at " + expiration_time_iso_format)
+    LOGGER.warning("Notifications channel will expire at %s", expiration_time_iso_format)
     request_input_json = {
         "watch": [
             {
@@ -333,10 +335,19 @@ def enable_notifications():
 
     if resp.status_code == 202:
         LOGGER.error("Failed to subscribe for notifications")
-        LOGGER.error("status_code: " + str(resp.status_code))
+        LOGGER.error("status_code: %s", str(resp.status_code))
         LOGGER.error(resp.text)
 
     resp.raise_for_status()
+
+
+def treade_notification_deamon(sec=0, minutes=0, hours=0):
+    """This func refresh another func , which create response to notification"""
+    while True:
+        sleep_time = sec + (minutes*60) + (hours*3600)
+        time.sleep(sleep_time)
+        enable_notifications()
+        print "Refresh enable notification"
 
 
 if __name__ == '__main__':
@@ -348,6 +359,10 @@ if __name__ == '__main__':
         sys.exit("Passed data in parameters is invalid. Script is terminated")
 
     try:
+        ENABLE_NOTIFICATIONS_THREAD = threading.Thread \
+            (target=treade_notification_deamon, kwargs=({"minutes":10}))
+        ENABLE_NOTIFICATIONS_THREAD.daemon = True
+        ENABLE_NOTIFICATIONS_THREAD.start()
         enable_notifications()
     except requests.RequestException as ex:
         LOGGER.error(
