@@ -186,6 +186,7 @@ def when_deal_in_closed_block(response, params_for_ga, ids):
     if cd9 is None:
         cd9 = 0
     params_for_ga.update({"cd9": cd9})
+    params_for_ga.update({"ev": cd9})
 
     if (check_json_fields("Service", response.json()["data"][0]) is False) or \
             (check_json_fields("Sub_Service", response.json()["data"][0]) is False):
