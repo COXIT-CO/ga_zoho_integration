@@ -308,6 +308,14 @@ def respond():
 
 def enable_notifications():
     """creating request using webhook"""
+    # creating _ACCESS_TOKEN and we check: how init this token
+    global _ACCESS_TOKEN
+    try:
+        oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
+        _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
+    except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
+        LOGGER.error("Unable to refresh access token", exc_info=ex)
+
     enable_notifications_endpoint = "/crm/v2/actions/watch"
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
     notifications_expiration_time = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
