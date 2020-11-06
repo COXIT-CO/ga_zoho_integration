@@ -1,12 +1,16 @@
 # pylint: disable=global-statement,import-error,too-many-return-statements
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
+from datetime import datetime, timedelta
+import time
+import  threading
 import json
 import sys
 from os import path
 
 import logging
 from logging.config import dictConfig
+import pytz
 
 import requests
 import zcrmsdk as zoho_crm
@@ -174,6 +178,36 @@ def ga_request(response, params_for_ga):
             "Update successfully sent to Google Analytic")
         return Response(status=200)
 
+def when_deal_in_closed_block(response, params_for_ga, ids):
+    """"make exclusive ga params change when deals in block CLOSED"""
+    if check_json_fields("Amount", response.json()["data"][0]) is False:
+        return False
+    cd9 = response.json()["data"][0]["Amount"]
+    if cd9 is None:
+        cd9 = 0
+    params_for_ga.update({"cd9": cd9})
+
+    if (check_json_fields("Service", response.json()["data"][0]) is False) or \
+            (check_json_fields("Sub_Service", response.json()["data"][0]) is False):
+        return False
+    cd5 = response.json()["data"][0]["Service"]
+    params_for_ga.update({"cd5": cd5})
+    cd6 = response.json()["data"][0]["Sub_Service"]
+    params_for_ga.update({"cd6": cd6})
+
+    if check_json_fields("Good_Inquiry", response.json()["data"][0]) is False:
+        return False
+    cd7 = response.json()["data"][0]["Good_Inquiry"]
+    params_for_ga.update({"cd7": cd7})
+
+    if check_json_fields("Deal_Size", response.json()["data"][0]) is False:
+        return False
+    cd8 = response.json()["data"][0]["Deal_Size"]
+    params_for_ga.update({"cd8": cd8})
+
+    params_for_ga.update({"cd2": ids})
+
+    return True
 
 def creat_ga_params(response, ids):
     """"Varification for stage and creat parameters for GA requst"""
@@ -212,20 +246,19 @@ def creat_ga_params(response, ids):
     params_for_ga.update({"tid": ga_property_id})
 
     if "Closed" in current_stage:
-        if check_json_fields("Amount", response.json()["data"][0]) is False:
+        if when_deal_in_closed_block(response, params_for_ga, ids) is False:
             return params_for_ga, False
-        ev_amount = response.json()["data"][0]["Amount"]
-        if ev_amount is None:
-            ev_amount = 0
-        params_for_ga.update({"ev": ev_amount})
 
-    if "Proposal" in current_stage:
-        if check_json_fields("Service", response.json()["data"][0]) is False:
+    if "Disqualified" in current_stage:
+        if check_json_fields("Reason_to_Disqualify", response.json()["data"][0]) is False:
             return params_for_ga, False
-        cdi5_service = response.json()["data"][0]["Service"]
-        params_for_ga.update({"cdi5": cdi5_service})
+        cd10 = response.json()["data"][0]["Reason_to_Disqualify"]
         ga_request(response, params_for_ga)
-        params_for_ga.update({"ec": "service defined"})
+        params_for_ga.update({"cd10": cd10})
+        params_for_ga.update({"ec": "crm_details_defined"})
+        params_for_ga.update({"ea": "Reason for Disqualify defined"})
+        params_for_ga.update({"el": cd10})
+
     return params_for_ga, True
 
 
@@ -262,10 +295,10 @@ def respond():
                 "The application can not get access to Zoho. Check the access token",
                 exc_info=ex)
         else:
-            params_for_ga, log_flag = creat_ga_params(response, ids)
-            if log_flag is False:
+            params_for_ga, good_response_flag = creat_ga_params(response, ids)
+            if good_response_flag is False:
                 return Response(status=500)
-            data_stage = {response.json()["data"][0]["id"]: params_for_ga["el"]}
+            data_stage = {ids: params_for_ga["el"]}
             if stage_changes(data_stage):
                 ga_request(response, params_for_ga)
             else:
@@ -273,15 +306,18 @@ def respond():
     return Response(status=200)
 
 
-def creat_requests():
+def enable_notifications():
     """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
-
+    notifications_expiration_time = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
+    expiration_time_iso_format = notifications_expiration_time.replace(tzinfo=pytz.utc).isoformat()
+    LOGGER.warning("Notifications channel will expire at %s", expiration_time_iso_format)
     request_input_json = {
         "watch": [
             {
                 "channel_id": "1000000068002",
+                "channel_expiry": expiration_time_iso_format,
                 "events": ["Deals.edit"],
                 "token": "TOKEN_FOR_VERIFICATION_OF_1000000068002",
                 "notify_url": notify_url,
@@ -296,7 +332,22 @@ def creat_requests():
         enable_notifications_endpoint,
         headers=header,
         data=json.dumps(request_input_json))
+
+    if resp.status_code == 202:
+        LOGGER.error("Failed to subscribe for notifications")
+        LOGGER.error("status_code: %s", str(resp.status_code))
+        LOGGER.error(resp.text)
+
     resp.raise_for_status()
+
+
+def treade_notification_deamon(sec=0, minutes=0, hours=0):
+    """This func refresh another func , which create response to notification"""
+    while True:
+        sleep_time = sec + (minutes*60) + (hours*3600)
+        time.sleep(sleep_time)
+        enable_notifications()
+        print "Refresh enable notification"
 
 
 if __name__ == '__main__':
@@ -308,7 +359,11 @@ if __name__ == '__main__':
         sys.exit("Passed data in parameters is invalid. Script is terminated")
 
     try:
-        creat_requests()
+        ENABLE_NOTIFICATIONS_THREAD = threading.Thread \
+            (target=treade_notification_deamon, kwargs=({"hours":23}))
+        ENABLE_NOTIFICATIONS_THREAD.daemon = True
+        ENABLE_NOTIFICATIONS_THREAD.start()
+        enable_notifications()
     except requests.RequestException as ex:
         LOGGER.error(
             "ZohoCRM does not response. Check selected scopes generating grant_token",
