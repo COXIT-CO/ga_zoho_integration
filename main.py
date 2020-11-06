@@ -1,7 +1,8 @@
 # pylint: disable=global-statement,import-error,too-many-return-statements
 """Python script which integrates Zoho CRM deals data with google analytics."""
 import argparse
-import datetime
+from datetime import datetime, timedelta
+import pytz
 import json
 import sys
 from os import path
@@ -303,17 +304,18 @@ def respond():
     return Response(status=200)
 
 
-def creat_requests():
+def enable_notifications():
     """creating request using webhook"""
     enable_notifications_endpoint = "/crm/v2/actions/watch"
     notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
-    notifications_expiration_time = datetime.datetime.now() + datetime.timedelta(days=1)
-    LOGGER.warning("Notifications channel will expire at " + notifications_expiration_time.isoformat())
+    notifications_expiration_time = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
+    expiration_time_iso_format = notifications_expiration_time.replace(tzinfo=pytz.utc).isoformat()
+    LOGGER.warning("Notifications channel will expire at " + expiration_time_iso_format)
     request_input_json = {
         "watch": [
             {
                 "channel_id": "1000000068002",
-                "channel_expiry": notifications_expiration_time.isoformat(),
+                "channel_expiry": expiration_time_iso_format,
                 "events": ["Deals.edit"],
                 "token": "TOKEN_FOR_VERIFICATION_OF_1000000068002",
                 "notify_url": notify_url,
@@ -328,6 +330,12 @@ def creat_requests():
         enable_notifications_endpoint,
         headers=header,
         data=json.dumps(request_input_json))
+
+    if resp.status_code == 202:
+        LOGGER.error("Failed to subscribe for notifications")
+        LOGGER.error("status_code: " + str(resp.status_code))
+        LOGGER.error(resp.text)
+
     resp.raise_for_status()
 
 
@@ -340,7 +348,7 @@ if __name__ == '__main__':
         sys.exit("Passed data in parameters is invalid. Script is terminated")
 
     try:
-        creat_requests()
+        enable_notifications()
     except requests.RequestException as ex:
         LOGGER.error(
             "ZohoCRM does not response. Check selected scopes generating grant_token",
