@@ -360,7 +360,7 @@ if __name__ == '__main__':
 
     try:
         ENABLE_NOTIFICATIONS_THREAD = threading.Thread \
-            (target=treade_notification_deamon, kwargs=({"minutes":10}))
+            (target=treade_notification_deamon, kwargs=({"hours":23}))
         ENABLE_NOTIFICATIONS_THREAD.daemon = True
         ENABLE_NOTIFICATIONS_THREAD.start()
         enable_notifications()
