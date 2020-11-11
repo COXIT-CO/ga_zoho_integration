@@ -3,7 +3,7 @@
 import argparse
 from datetime import datetime, timedelta
 import time
-import  threading
+import threading
 import json
 import sys
 from os import path
@@ -237,7 +237,8 @@ def creat_ga_params(response, ids):
         current_stage)
 
     if ((check_json_fields("GA_client_id", response.json()["data"][0])) is False) or \
-            (check_json_fields("GA_property_id", response.json()["data"][0]) is False):
+            (check_json_fields("GA_property_id", response.json()["data"][0]) is False) or \
+            (check_json_fields("Amount", response.json()["data"][0]) is False):
         return params_for_ga, False
     current_google_id = response.json()["data"][0]["GA_client_id"]
     ga_property_id = response.json()["data"][0]["GA_property_id"]
@@ -245,6 +246,10 @@ def creat_ga_params(response, ids):
         return params_for_ga, False
     params_for_ga.update({"cid": current_google_id})
     params_for_ga.update({"tid": ga_property_id})
+    cd9 = response.json()["data"][0]["Amount"]
+    if cd9 is None:
+        cd9 = 0
+    params_for_ga.update({"ev": int(round(cd9))})
 
     if "Closed" in current_stage:
         if when_deal_in_closed_block(response, params_for_ga, ids) is False:
