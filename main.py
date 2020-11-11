@@ -214,9 +214,9 @@ def when_deal_in_closed_block(response, params_for_ga, ids):
 def second_response_to_ga(response, params_for_ga, current_stage):
     """do another response to ga"""
     ga_request(response, params_for_ga)
-    if check_json_fields("expected_revenue", response.json()["data"][0]) is False:
+    if check_json_fields("Expected_Revenue", response.json()["data"][0]) is False:
         return False
-    expected_revenue = response.json()["data"][0]["expected_revenue"]
+    expected_revenue = response.json()["data"][0]["Expected_Revenue"]
     params_for_ga.update({"ec": "Expected_revenue_change"})
     params_for_ga.update({"ev": expected_revenue})
     params_for_ga.update({"el": "Exp_revenue" + current_stage})
