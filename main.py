@@ -219,7 +219,7 @@ def second_response_to_ga(response, params_for_ga, current_stage):
     expected_revenue = response.json()["data"][0]["Expected_Revenue"]
     params_for_ga.update({"ec": "Expected_revenue_change"})
     params_for_ga.update({"ev": expected_revenue})
-    params_for_ga.update({"el": "Exp_revenue" + current_stage})
+    params_for_ga.update({"el": "Exp_revenue " + current_stage})
 
     return True
 
