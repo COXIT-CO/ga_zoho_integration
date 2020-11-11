@@ -210,8 +210,22 @@ def when_deal_in_closed_block(response, params_for_ga, ids):
 
     return True
 
+
+def second_response_to_ga(response, params_for_ga, current_stage):
+    """do another response to ga"""
+    ga_request(response, params_for_ga)
+    if check_json_fields("expected_revenue", response.json()["data"][0]) is False:
+        return False
+    expected_revenue = response.json()["data"][0]["expected_revenue"]
+    params_for_ga.update({"ec": "Expected_revenue_change"})
+    params_for_ga.update({"ev": expected_revenue})
+    params_for_ga.update({"el": "Exp_revenue" + current_stage})
+
+    return True
+
+
 def creat_ga_params(response, ids):
-    """"Varification for stage and creat parameters for GA requst"""
+    """Varification for stage and creat parameters for GA requst"""
 
     params_for_ga = {
         "v": "1",
@@ -250,6 +264,9 @@ def creat_ga_params(response, ids):
     if cd9 is None:
         cd9 = 0
     params_for_ga.update({"ev": int(round(cd9))})
+
+    if second_response_to_ga(response, params_for_ga, current_stage) is False:
+        return params_for_ga, False
 
     if "Closed" in current_stage:
         if when_deal_in_closed_block(response, params_for_ga, ids) is False:
