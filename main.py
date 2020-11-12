@@ -1,4 +1,4 @@
-# pylint: disable=global-statement,import-error,unused-import
+# pylint: disable=global-statement,import-error
 """"In this module, we write all imports and global variables"""
 import argparse
 from datetime import datetime, timedelta
@@ -238,9 +238,8 @@ def check_main_fields(response):
 def varification_ga_request(response, params_for_ga, current_stage, ids):
     """"make varification if stage is change block"""
     data_stage = {ids: current_stage}
-    if params_for_ga["ec"] is "Expected_revenue_change":
+    if "Expected_revenue_change" in params_for_ga["ec"]:
         data_stage = {ids + "e": current_stage}
-    print data_stage
     if stage_changes(data_stage):
         ga_request(response, params_for_ga)
     else:
@@ -265,7 +264,7 @@ def special_condition(response, current_stage, params_for_ga, ids):
         params_for_ga.update({"ec": "crm_details_defined"})
         params_for_ga.update({"ea": "Reason for Disqualify defined"})
         params_for_ga.update({"el": cd10})
-        ga_request(response,params_for_ga)
+        ga_request(response, params_for_ga)
 
     return True
 
@@ -321,6 +320,14 @@ def creat_ga_params(response, ids):
         cd9 = 0
     params_for_ga.update({"ev": int(round(cd9))})
 
+    if sent_request_to_ga(response, params_for_ga, current_stage, ids) is False:
+        return False
+
+    return True
+
+
+def sent_request_to_ga(response, params_for_ga, current_stage, ids):
+    """"we watch to special condition for send ga requst  """
     if first_response_to_ga(response, params_for_ga, current_stage, ids) is False:
         return False
 
