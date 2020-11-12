@@ -1,5 +1,5 @@
-# pylint: disable=global-statement,import-error,too-many-return-statements
-"""Python script which integrates Zoho CRM deals data with google analytics."""
+# pylint: disable=global-statement,import-error,unused-import
+""""In this module, we write all imports and global variables"""
 import argparse
 from datetime import datetime, timedelta
 import time
@@ -15,17 +15,99 @@ import pytz
 import requests
 import zcrmsdk as zoho_crm
 from flask import Flask, request, Response
+from pyngrok import ngrok
 
 from config import LOG_CONFIG
 
-_ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
-_ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ACCESS_TOKEN, \
-    _ZOHO_NOTIFY_URL, _PORT = "", "", "", "", "", ""
+ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
+ZOHO_LOGIN_EMAIL, ZOHO_GRANT_TOKEN, ZOHO_API_URI, ACCESS_TOKEN, \
+    NGROK_TOKEN, PORT = "", "", "", "", "", ""
 LOGGER = logging.getLogger()
 
 
+def create_parser():
+    """Creat parameters passing from console"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-e', '--email')
+    parser.add_argument('-gt', '--grant_token')
+    parser.add_argument('-cid', '--client_id')
+    parser.add_argument('-cs', '--client_secret')
+    parser.add_argument('-api', '--api_uri', default='com')
+    parser.add_argument('-ngrok', '--ngrok_token')
+    parser.add_argument('-port', '--port', default='80')
+    parser.add_argument('-log', '--logging', default='file')
+
+    return parser
+
+
+def initialize_variables():
+    """TODO: make following data configurable on script startup (passed as
+    arguments)"""
+
+    # change global variebles
+    global ZOHO_LOGIN_EMAIL, ZOHO_GRANT_TOKEN, ZOHO_API_URI, NGROK_TOKEN, \
+        PORT, LOGGER, LOG_CONFIG
+
+    parser = create_parser()
+    namespace = parser.parse_args(sys.argv[1:])
+
+    # Add parameters passing from console
+    zoho_client_id = namespace.client_id
+    zoho_client_secret = namespace.client_secret
+
+    ZOHO_LOGIN_EMAIL = namespace.email
+    ZOHO_GRANT_TOKEN = namespace.grant_token
+    ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
+    NGROK_TOKEN = namespace.ngrok_token
+    PORT = namespace.port
+
+    LOG_CONFIG['root']['handlers'].append(namespace.logging)
+    flask_log = logging.getLogger('werkzeug')
+    flask_log.setLevel(logging.ERROR)
+    dictConfig(LOG_CONFIG)
+    LOGGER = logging.getLogger()
+
+    config = {
+        "apiBaseUrl": ZOHO_API_URI,
+        "token_persistence_path": "./",
+        "currentUserEmail": ZOHO_LOGIN_EMAIL,
+        "client_id": zoho_client_id,
+        "client_secret": zoho_client_secret,
+        "redirect_uri": "coxit.co",
+        "accounts_url": "https://accounts.zoho." + namespace.api_uri,
+    }
+
+    return config
+
+
+def creat_init_access_token():
+    """creating _ACCESS_TOKEN and we check: how init this token """
+    global ACCESS_TOKEN
+
+    zoho_crm.ZCRMRestClient.initialize(initialize_variables())
+    oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
+    if path.isfile('./zcrm_oauthtokens.pkl'):
+        ACCESS_TOKEN = oauth_client.get_access_token(ZOHO_LOGIN_EMAIL)
+    else:
+        oauth_tokens = oauth_client.generate_access_token(ZOHO_GRANT_TOKEN)
+        ACCESS_TOKEN = oauth_tokens.get_access_token()
+
+
+def refresh_access_token():
+    """refresh access token"""
+    global ACCESS_TOKEN
+    try:
+        oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
+        ACCESS_TOKEN = oauth_client.get_access_token(ZOHO_LOGIN_EMAIL)
+    except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
+        LOGGER.error("Unable to refresh access token", exc_info=ex)
+        return False
+    return True
+
+
+
 def compare_change_in_data(old_data, new_data):
-    """compare old stages and new stage. Return false if stage isnt change"""
+    """compare old stages and new stage. Return false if stage isn`t change"""
     flag = False
 
     for key, value in old_data.items():
@@ -61,78 +143,6 @@ def stage_changes(new_data):
             json.dump(new_data, write_file)
 
     return flag
-
-
-def create_parser():
-    """Creat parameters passing from console"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-e', '--email')
-    parser.add_argument('-gt', '--grant_token')
-    parser.add_argument('-cid', '--client_id')
-    parser.add_argument('-cs', '--client_secret')
-    parser.add_argument('-api', '--api_uri', default='com')
-    public_ip = "http://" + requests.get('http://ipinfo.io/json').json()['ip']
-    parser.add_argument('-nu', '--notify_url', default=public_ip)
-    parser.add_argument('-port', '--port', default='80')
-    parser.add_argument('-log', '--logging', default='file')
-
-    return parser
-
-
-def initialize_variebles():
-    """TODO: make following data configurable on script startup (passed as
-    arguments)"""
-
-    # change global variebles
-    global _ZOHO_LOGIN_EMAIL, _ZOHO_GRANT_TOKEN, _ZOHO_API_URI, _ZOHO_NOTIFY_URL, \
-        _PORT, LOGGER
-
-    parser = create_parser()
-    namespace = parser.parse_args(sys.argv[1:])
-
-    # Add parameters passing from console
-    zoho_client_id = namespace.client_id
-    zoho_client_secret = namespace.client_secret
-
-    _ZOHO_LOGIN_EMAIL = namespace.email
-    _ZOHO_GRANT_TOKEN = namespace.grant_token
-    _ZOHO_API_URI = "https://www.zohoapis." + namespace.api_uri
-    _ZOHO_NOTIFY_URL = namespace.notify_url
-    _PORT = namespace.port
-
-    LOG_CONFIG['root']['handlers'].append(namespace.logging)
-    flask_log = logging.getLogger('werkzeug')
-    flask_log.setLevel(logging.ERROR)
-    dictConfig(LOG_CONFIG)
-    LOGGER = logging.getLogger()
-
-    config = {
-        "apiBaseUrl": _ZOHO_API_URI,
-        "token_persistence_path": "./",
-        "currentUserEmail": _ZOHO_LOGIN_EMAIL,
-        "client_id": zoho_client_id,
-        "client_secret": zoho_client_secret,
-        "redirect_uri": "coxit.co",
-        "accounts_url": "https://accounts.zoho." + namespace.api_uri,
-    }
-
-    return config
-
-
-def creat_init_access_token():
-    """creating _ACCESS_TOKEN and we check: how init this token """
-    global _ACCESS_TOKEN
-
-    zoho_crm.ZCRMRestClient.initialize(initialize_variebles())
-    oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
-    if path.isfile('./zcrm_oauthtokens.pkl'):
-        _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
-    else:
-        oauth_tokens = oauth_client.generate_access_token(_ZOHO_GRANT_TOKEN)
-        _ACCESS_TOKEN = oauth_tokens.get_access_token()
-
-
-APP = Flask(__name__)
 
 
 def check_json_fields(name_field, data_json):
@@ -178,43 +188,91 @@ def ga_request(response, params_for_ga):
             "Update successfully sent to Google Analytic")
         return Response(status=200)
 
+
 def when_deal_in_closed_block(response, params_for_ga, ids):
     """"make exclusive ga params change when deals in block CLOSED"""
-    if check_json_fields("Amount", response.json()["data"][0]) is False:
-        return False
-    cd9 = response.json()["data"][0]["Amount"]
-    if cd9 is None:
-        cd9 = 0
-    params_for_ga.update({"cd9": (cd9)})
-    params_for_ga.update({"ev": int(round(cd9))})
+    fields_names = {
+        "Service",
+        "Sub_Service",
+        "Good_Inquiry",
+        "Deal_Size"}
+    for field in fields_names:
+        if check_json_fields(field, response.json()["data"][0]) is False:
+            return False
 
-    if (check_json_fields("Service", response.json()["data"][0]) is False) or \
-            (check_json_fields("Sub_Service", response.json()["data"][0]) is False):
-        return False
-    cd5 = response.json()["data"][0]["Service"]
-    params_for_ga.update({"cd5": cd5})
-    cd6 = response.json()["data"][0]["Sub_Service"]
-    params_for_ga.update({"cd6": cd6})
+    data_from_field = response.json()["data"][0]["Amount"]
+    if data_from_field is None:
+        data_from_field = 0
+    params_for_ga.update({"cd9": (data_from_field)})
+    params_for_ga.update({"ev": int(round(data_from_field))})
 
-    if check_json_fields("Good_Inquiry", response.json()["data"][0]) is False:
-        return False
-    cd7 = response.json()["data"][0]["Good_Inquiry"]
-    params_for_ga.update({"cd7": cd7})
+    data_from_field = response.json()["data"][0]["Service"]
+    params_for_ga.update({"cd5": data_from_field})
+    data_from_field = response.json()["data"][0]["Sub_Service"]
+    params_for_ga.update({"cd6": data_from_field})
+    data_from_field = response.json()["data"][0]["Good_Inquiry"]
+    params_for_ga.update({"cd7": data_from_field})
 
-    if check_json_fields("Deal_Size", response.json()["data"][0]) is False:
-        return False
-    cd8 = response.json()["data"][0]["Deal_Size"]
-    params_for_ga.update({"cd8": cd8})
+    data_from_field = response.json()["data"][0]["Deal_Size"]
+    params_for_ga.update({"cd8": data_from_field})
 
     params_for_ga.update({"cd2": ids})
 
     return True
 
 
-def second_response_to_ga(response, params_for_ga, current_stage):
+def check_main_fields(response):
+    """Do varification.Are main field in json"""
+    try:
+        fields_names = {"GA_client_id", "GA_property_id", "Stage",}
+        for field in fields_names:
+            if check_json_fields(field, response.json()["data"][0]) is False:
+                return False
+    except ValueError:
+        LOGGER.error("Incorrect response JSON data")
+        return False
+
+    return True
+
+
+def varification_ga_request(response, params_for_ga, current_stage, ids):
+    """"make varification if stage is change block"""
+    data_stage = {ids: current_stage}
+    if params_for_ga["ec"] is "Expected_revenue_change":
+        data_stage = {ids + "e": current_stage}
+    print data_stage
+    if stage_changes(data_stage):
+        ga_request(response, params_for_ga)
+    else:
+        LOGGER.info("Stage was not changed. Event was not sent")
+        return False
+    return True
+
+
+def special_condition(response, current_stage, params_for_ga, ids):
+    """"Special move when some deal in specific block """
+    if "Closed" in current_stage:
+        if when_deal_in_closed_block(response, params_for_ga, ids) is False:
+            return False
+
+    if "Disqualified" in current_stage:
+        if check_json_fields("Reason_to_Disqualify", response.json()["data"][0]) is False:
+            return False
+        cd10 = response.json()["data"][0]["Reason_to_Disqualify"]
+        if varification_ga_request(response, params_for_ga, current_stage, ids) is False:
+            return False
+        params_for_ga.update({"cd10": cd10})
+        params_for_ga.update({"ec": "crm_details_defined"})
+        params_for_ga.update({"ea": "Reason for Disqualify defined"})
+        params_for_ga.update({"el": cd10})
+        ga_request(response,params_for_ga)
+
+    return True
+
+
+def first_response_to_ga(response, params_for_ga, current_stage, ids):
     """do another response to ga"""
-    ga_request(response, params_for_ga)
-    if check_json_fields("Expected_Revenue", response.json()["data"][0]) is False:
+    if varification_ga_request(response, params_for_ga, current_stage, ids) is False:
         return False
     expected_revenue = response.json()["data"][0]["Expected_Revenue"]
     params_for_ga.update({"ec": "Expected_revenue_change"})
@@ -225,7 +283,7 @@ def second_response_to_ga(response, params_for_ga, current_stage):
 
 
 def creat_ga_params(response, ids):
-    """Varification for stage and creat parameters for GA requst"""
+    """"Varification for stage and creat parameters for GA requst"""
 
     params_for_ga = {
         "v": "1",
@@ -235,14 +293,11 @@ def creat_ga_params(response, ids):
         "ua": "Opera / 9.80",
         "dp": "ZohoCRM",
     }
-    try:
-        if check_json_fields("Stage", response.json()["data"][0]) is False:
-            return params_for_ga, False
-        current_stage = response.json()["data"][0]["Stage"]
-        params_for_ga.update({"el": current_stage})
-    except ValueError:
-        LOGGER.error("Incorrect response JSON data")
-        return params_for_ga, False
+    if check_main_fields(response) is False:
+        return False
+
+    current_stage = response.json()["data"][0]["Stage"]
+    params_for_ga.update({"el": current_stage})
 
     LOGGER.info(
         "id=" +
@@ -250,100 +305,78 @@ def creat_ga_params(response, ids):
         ": current stage is " +
         current_stage)
 
-    if ((check_json_fields("GA_client_id", response.json()["data"][0])) is False) or \
-            (check_json_fields("GA_property_id", response.json()["data"][0]) is False) or \
-            (check_json_fields("Amount", response.json()["data"][0]) is False):
-        return params_for_ga, False
     current_google_id = response.json()["data"][0]["GA_client_id"]
     ga_property_id = response.json()["data"][0]["GA_property_id"]
     if(current_google_id is None) or (ga_property_id is None):
-        return params_for_ga, False
+        return False
     params_for_ga.update({"cid": current_google_id})
     params_for_ga.update({"tid": ga_property_id})
+
+    if (check_json_fields("Amount", response.json()["data"][0]) is False) or \
+            (check_json_fields("Expected_Revenue", response.json()["data"][0]) is False):
+        return False
+
     cd9 = response.json()["data"][0]["Amount"]
     if cd9 is None:
         cd9 = 0
     params_for_ga.update({"ev": int(round(cd9))})
 
-    if second_response_to_ga(response, params_for_ga, current_stage) is False:
-        return params_for_ga, False
+    if first_response_to_ga(response, params_for_ga, current_stage, ids) is False:
+        return False
 
-    if "Closed" in current_stage:
-        if when_deal_in_closed_block(response, params_for_ga, ids) is False:
-            return params_for_ga, False
+    if special_condition(response, current_stage, params_for_ga, ids) is False:
+        return False
 
-    if "Disqualified" in current_stage:
-        if check_json_fields("Reason_to_Disqualify", response.json()["data"][0]) is False:
-            return params_for_ga, False
-        cd10 = response.json()["data"][0]["Reason_to_Disqualify"]
-        ga_request(response, params_for_ga)
-        params_for_ga.update({"cd10": cd10})
-        params_for_ga.update({"ec": "crm_details_defined"})
-        params_for_ga.update({"ea": "Reason for Disqualify defined"})
-        params_for_ga.update({"el": cd10})
+    if varification_ga_request(response, params_for_ga, current_stage, ids) is False:
+        return False
 
-    return params_for_ga, True
+    return True
 
 
-@APP.route(_ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
-def respond():
-    """generate post request to google analytics  """
-
-    # creating _ACCESS_TOKEN and we check: how init this token
-    global _ACCESS_TOKEN
+def zoho_ga_requests(module, ids):
+    """take dat from zoho and sent them to GA"""
+    auth_header = {"Authorization": "Zoho-oauthtoken " + ACCESS_TOKEN}
     try:
-        oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
-        _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
-    except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
-        LOGGER.error("Unable to refresh access token", exc_info=ex)
-        return Response(status=500)
+        response = requests.get(
+            url=ZOHO_API_URI +
+            "/crm/v2/" +
+            module +
+            "/" +
+            ids,
+            headers=auth_header)
+        response.raise_for_status()
+    except requests.RequestException as ex:
+        LOGGER.error(
+            "The application can not get access to Zoho. Check the access token",
+            exc_info=ex)
+        return False
+    else:
+        good_response_flag = creat_ga_params(response, ids)
+        if good_response_flag is False:
+            return False
 
-    # getting deals records
-    auth_header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN}
-    if "module" not in request.json:
-        return Response(status=500)
-    module = request.json["module"]
-    for ids in request.json["ids"]:
-        try:
-            response = requests.get(
-                url=_ZOHO_API_URI +
-                "/crm/v2/" +
-                module +
-                "/" +
-                ids,
-                headers=auth_header)
-            response.raise_for_status()
-        except requests.RequestException as ex:
-            LOGGER.error(
-                "The application can not get access to Zoho. Check the access token",
-                exc_info=ex)
-        else:
-            params_for_ga, good_response_flag = creat_ga_params(response, ids)
-            if good_response_flag is False:
-                return Response(status=500)
-            data_stage = {ids: params_for_ga["el"]}
-            if stage_changes(data_stage):
-                ga_request(response, params_for_ga)
-            else:
-                LOGGER.info("Stage was not changed. Event was not sent")
-    return Response(status=200)
+    return True
 
 
-def enable_notifications():
-    """creating request using webhook"""
-    # creating _ACCESS_TOKEN and we check: how init this token
-    global _ACCESS_TOKEN
-    try:
-        oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
-        _ACCESS_TOKEN = oauth_client.get_access_token(_ZOHO_LOGIN_EMAIL)
-    except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
-        LOGGER.error("Unable to refresh access token", exc_info=ex)
 
-    enable_notifications_endpoint = "/crm/v2/actions/watch"
-    notify_url = _ZOHO_NOTIFY_URL + _ZOHO_NOTIFICATIONS_ENDPOINT
-    notifications_expiration_time = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
-    expiration_time_iso_format = notifications_expiration_time.replace(tzinfo=pytz.utc).isoformat()
-    LOGGER.warning("Notifications channel will expire at %s", expiration_time_iso_format)
+def ngrok_settings():
+    """configure ngrok settings"""
+    ngrok.set_auth_token(NGROK_TOKEN)
+    return str(ngrok.connect(port=PORT))
+
+
+def make_input_json():
+    """create json for zoho notification"""
+    notify_url = ngrok_settings() + ZOHO_NOTIFICATIONS_ENDPOINT
+
+    notifications_expiration_time = datetime.utcnow().replace(microsecond=0) + \
+        timedelta(days=1)
+    expiration_time_iso_format = notifications_expiration_time.replace(
+        tzinfo=pytz.utc).isoformat()
+    LOGGER.warning(
+        "Notifications channel will expire at %s",
+        expiration_time_iso_format)
+
     request_input_json = {
         "watch": [
             {
@@ -353,16 +386,22 @@ def enable_notifications():
                 "token": "TOKEN_FOR_VERIFICATION_OF_1000000068002",
                 "notify_url": notify_url,
             }]}
+    return request_input_json
 
-    # Enable Zoho Notifications
-    header = {"Authorization": "Zoho-oauthtoken " + _ACCESS_TOKEN,
+def enable_notifications():
+    """Enable Zoho Notifications"""
+    enable_notifications_endpoint = "/crm/v2/actions/watch"
+
+    refresh_access_token()
+
+    header = {"Authorization": "Zoho-oauthtoken " + ACCESS_TOKEN,
               'Content-type': 'application/json'}
-    LOGGER.info(msg="Zoho-oauthtoken " + _ACCESS_TOKEN)
+
     resp = requests.post(
-        url=_ZOHO_API_URI +
+        url=ZOHO_API_URI +
         enable_notifications_endpoint,
         headers=header,
-        data=json.dumps(request_input_json))
+        data=json.dumps(make_input_json()))
 
     if resp.status_code == 202:
         LOGGER.error("Failed to subscribe for notifications")
@@ -375,29 +414,54 @@ def enable_notifications():
 def treade_notification_deamon(sec=0, minutes=0, hours=0):
     """This func refresh another func , which create response to notification"""
     while True:
-        sleep_time = sec + (minutes*60) + (hours*3600)
+        sleep_time = sec + (minutes * 60) + (hours * 3600)
         time.sleep(sleep_time)
         enable_notifications()
         print "Refresh enable notification"
 
 
-if __name__ == '__main__':
+def create_tread():
+    """Create deamon thred for endless notofication from zoho"""
+    enable_notification_thread = threading.Thread(
+        target=treade_notification_deamon, kwargs=({"hours": 23}))
+    enable_notification_thread.daemon = True
+    enable_notification_thread.start()
 
+
+APP = Flask(__name__)
+
+
+@APP.route(ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
+def respond():
+    """generate post request to google analytics  """
+
+    if refresh_access_token() is False:
+        return Response(status=500)
+    # getting deals records
+
+    if "module" not in request.json:
+        return Response(status=500)
+
+    module = request.json["module"]
+    ids = request.json["ids"][0]
+
+    if zoho_ga_requests(module, ids) is False:
+        Response(status=500)
+    return Response(status=200)
+
+
+if __name__ == '__main__':
     try:
         creat_init_access_token()
     except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
         LOGGER.error(ex)
         sys.exit("Passed data in parameters is invalid. Script is terminated")
-
     try:
-        ENABLE_NOTIFICATIONS_THREAD = threading.Thread \
-            (target=treade_notification_deamon, kwargs=({"hours":23}))
-        ENABLE_NOTIFICATIONS_THREAD.daemon = True
-        ENABLE_NOTIFICATIONS_THREAD.start()
+        create_tread()
         enable_notifications()
     except requests.RequestException as ex:
         LOGGER.error(
             "ZohoCRM does not response. Check selected scopes generating grant_token",
             exc_info=ex)
     else:
-        APP.run(host="0.0.0.0", port=_PORT)
+        APP.run(host="0.0.0.0", port=PORT)
