@@ -83,10 +83,12 @@ def initialize_variables():
 def creat_init_access_token():
     """creating _ACCESS_TOKEN and we check: how init this token """
     global ACCESS_TOKEN
+    current_dir = path.dirname(__file__)
+    file_path = path.join(current_dir, 'zcrm_oauthtokens.pkl')
 
     zoho_crm.ZCRMRestClient.initialize(initialize_variables())
     oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
-    if path.isfile('./zcrm_oauthtokens.pkl'):
+    if path.isfile(file_path):
         ACCESS_TOKEN = oauth_client.get_access_token(ZOHO_LOGIN_EMAIL)
     else:
         oauth_tokens = oauth_client.generate_access_token(ZOHO_GRANT_TOKEN)
