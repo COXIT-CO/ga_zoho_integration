@@ -83,12 +83,10 @@ def initialize_variables():
 def creat_init_access_token():
     """creating _ACCESS_TOKEN and we check: how init this token """
     global ACCESS_TOKEN
-    current_dir = path.dirname(__file__)
-    file_path = path.join(current_dir, 'zcrm_oauthtokens.pkl')
 
     zoho_crm.ZCRMRestClient.initialize(initialize_variables())
     oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
-    if path.isfile(file_path):
+    if path.isfile('./zcrm_oauthtokens.pkl'):
         ACCESS_TOKEN = oauth_client.get_access_token(ZOHO_LOGIN_EMAIL)
     else:
         oauth_tokens = oauth_client.generate_access_token(ZOHO_GRANT_TOKEN)
@@ -277,7 +275,7 @@ def first_response_to_ga(response, params_for_ga, current_stage, ids):
         return False
     expected_revenue = response.json()["data"][0]["Expected_Revenue"]
     params_for_ga.update({"ec": "Expected_revenue_change"})
-    params_for_ga.update({"ev": expected_revenue})
+    params_for_ga.update({"ev": int(round(expected_revenue))})
     params_for_ga.update({"el": "Exp_revenue " + current_stage})
 
     return True
