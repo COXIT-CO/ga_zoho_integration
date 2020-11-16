@@ -441,7 +441,8 @@ APP = Flask(__name__)
 
 
 @APP.errorhandler(Exception)
-def server_error(err):
+def server_error():
+    """"when flash app crash"""
     return "exception", 500
 
 @APP.route(ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
