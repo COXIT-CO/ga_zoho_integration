@@ -1,5 +1,5 @@
 # pylint: disable=global-statement,import-error
-""""In this module, we write all imports and global variables"""
+""""Python script which integrates Zoho CRM deals data with google analytics"""
 import argparse
 from datetime import datetime, timedelta
 import time
@@ -18,6 +18,8 @@ from flask import Flask, request, Response
 from pyngrok import ngrok
 
 from config import LOG_CONFIG
+from email_notification import send_e_mail
+
 
 ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
 ZOHO_LOGIN_EMAIL, ZOHO_GRANT_TOKEN, ZOHO_API_URI, ACCESS_TOKEN, \
@@ -41,12 +43,12 @@ def create_parser():
 
 
 def initialize_variables():
-    """TODO: make following data configurable on script startup (passed as
+    """make following data configurable on script startup (passed as
     arguments)"""
 
     # change global variebles
     global ZOHO_LOGIN_EMAIL, ZOHO_GRANT_TOKEN, ZOHO_API_URI, NGROK_TOKEN, \
-        PORT, LOGGER, LOG_CONFIG
+        PORT, LOGGER
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -224,7 +226,7 @@ def when_deal_in_closed_block(response, params_for_ga, ids):
 def check_main_fields(response):
     """Do varification.Are main field in json"""
     try:
-        fields_names = {"GA_client_id", "GA_property_id", "Stage",}
+        fields_names = {"GA_client_id", "GA_property_id", "Stage"}
         for field in fields_names:
             if check_json_fields(field, response.json()["data"][0]) is False:
                 return False
@@ -438,6 +440,10 @@ def create_tread():
 APP = Flask(__name__)
 
 
+@APP.errorhandler(Exception)
+def server_error(err):
+    return "exception", 500
+
 @APP.route(ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
 def respond():
     """generate post request to google analytics  """
@@ -471,4 +477,10 @@ if __name__ == '__main__':
             "ZohoCRM does not response. Check selected scopes generating grant_token",
             exc_info=ex)
     else:
-        APP.run(host="0.0.0.0", port=PORT)
+        try:
+            APP.run(host="0.0.0.0", port=5000)
+            if send_e_mail("bear.victor28@gmail.com") is False:
+                LOGGER.error("File 'emailnoti.json' can't open.")
+        except BaseException as err:
+            LOGGER.error(err)
+            send_e_mail("bear.victor28@gmail.com")
