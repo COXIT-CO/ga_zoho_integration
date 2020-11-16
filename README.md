@@ -51,7 +51,9 @@ from Zoho CRM
 `-port`: port for Zoho CRM notifications Webhook server. By default it's 80.
 To use not 80 port you will need to do additional proxy server set up.
 
-`-log`: mode of logging handling. To enable logging to console pass 'console'. By default it's 'file'
+`-logmode`: mode of logging handling. To enable logging to console pass 'console'. By default it's 'file'
+
+`-logpath`: path of storing logs. By dafault it's script path + 'logs' directory.
 
 `-ngrok`: your ngrok token from https://dashboard.ngrok.com/login
 
