@@ -1,16 +1,9 @@
 """Configuration module for logging"""
+import errno
 import logging
-from os import mkdir
+from os import makedirs
 
-LOG_DIR = "./logs/"
-
-try:
-    mkdir(LOG_DIR)
-except OSError:
-    print"Logs directory exists."
-else:
-    print"Successfully created the logs directory"
-
+LOG_DIR = ""
 
 LOG_CONFIG = dict(
     version=1,
@@ -47,3 +40,17 @@ LOG_CONFIG = dict(
         'level': logging.INFO,
     },
 )
+
+def init_logdir(logpath):
+    global LOG_DIR
+    try:
+        makedirs(logpath)
+    except OSError as ex:
+        if ex.errno != errno.EEXIST:
+            logging.exception("Problems with creating log directory", exc_info=ex)
+            init_logdir('./logs')
+        else:
+            logging.info('Log directory already created at ./logs')
+    else:
+        logging.info("Successfully created the logs directory at: \n"+logpath)
+    LOG_DIR = logpath
