@@ -1,5 +1,5 @@
 # pylint: disable=global-statement,import-error
-""""In this module, we write all imports and global variables"""
+"""Python script which integrates Zoho CRM deals data with google analytics"""
 import argparse
 from datetime import datetime, timedelta
 import time
@@ -46,7 +46,7 @@ def initialize_variables():
 
     # change global variebles
     global ZOHO_LOGIN_EMAIL, ZOHO_GRANT_TOKEN, ZOHO_API_URI, NGROK_TOKEN, \
-        PORT, LOGGER, LOG_CONFIG
+        PORT, LOGGER
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -224,7 +224,7 @@ def when_deal_in_closed_block(response, params_for_ga, ids):
 def check_main_fields(response):
     """Do varification.Are main field in json"""
     try:
-        fields_names = {"GA_client_id", "GA_property_id", "Stage",}
+        fields_names = {"GA_client_id", "GA_property_id", "Stage"}
         for field in fields_names:
             if check_json_fields(field, response.json()["data"][0]) is False:
                 return False
