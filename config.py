@@ -45,7 +45,9 @@ def init_logdir(logpath):
     try:
         mkdir(logpath)
     except OSError:
-        print"Logs directory exists."
+        from logging import getLogger
+        logger = getLogger()
+        logger.exception("Invalid Logs directory exists.")
     else:
         print"Successfully created the logs directory"
     LOG_DIR = logpath
