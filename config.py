@@ -47,10 +47,10 @@ def init_logdir(logpath):
         makedirs(logpath)
     except OSError as ex:
         if ex.errno != errno.EEXIST:
-            logging.exception("Problems with creating log directory", exc_info=ex)
-            init_logdir('./logs')
+           logging.exception("Problems with creating log directory", exc_info=ex)
+	   init_logdir('./logs')
         else:
-            logging.info('Log directory already created at ./logs')
+           print('Log directory already created at ' + logpath)
     else:
-        logging.info("Successfully created the logs directory at: \n"+logpath)
+  	 print("Successfully created the logs directory at: \n"+logpath)
     LOG_DIR = logpath
