@@ -2,15 +2,7 @@
 import logging
 from os import mkdir
 
-LOG_DIR = "./logs/"
-
-try:
-    mkdir(LOG_DIR)
-except OSError:
-    print"Logs directory exists."
-else:
-    print"Successfully created the logs directory"
-
+LOG_DIR = ""
 
 LOG_CONFIG = dict(
     version=1,
@@ -47,3 +39,15 @@ LOG_CONFIG = dict(
         'level': logging.INFO,
     },
 )
+
+def init_logdir(logpath):
+    global LOG_DIR
+    try:
+        mkdir(logpath)
+    except OSError:
+        from logging import getLogger
+        logger = getLogger()
+        logger.exception("Invalid Logs directory exists.")
+    else:
+        print"Successfully created the logs directory"
+    LOG_DIR = logpath
