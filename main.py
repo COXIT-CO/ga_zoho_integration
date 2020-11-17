@@ -46,7 +46,7 @@ def initialize_variables():
     """make following data configurable on script startup (passed as
     arguments)"""
 
-    # change global variebles
+    # change global variables
     global ZOHO_LOGIN_EMAIL, ZOHO_GRANT_TOKEN, ZOHO_API_URI, NGROK_TOKEN, \
         PORT, LOGGER
 
@@ -367,7 +367,6 @@ def zoho_ga_requests(module, ids):
     return True
 
 
-
 def ngrok_settings():
     """configure ngrok settings"""
     ngrok.set_auth_token(NGROK_TOKEN)
@@ -396,6 +395,7 @@ def make_input_json():
                 "notify_url": notify_url,
             }]}
     return request_input_json
+
 
 def enable_notifications():
     """Enable Zoho Notifications"""
@@ -430,7 +430,7 @@ def treade_notification_deamon(sec=0, minutes=0, hours=0):
 
 
 def create_tread():
-    """Create deamon thred for endless notofication from zoho"""
+    """Create deamon thread for endless notification from zoho"""
     enable_notification_thread = threading.Thread(
         target=treade_notification_deamon, kwargs=({"hours": 23}))
     enable_notification_thread.daemon = True
@@ -444,6 +444,7 @@ APP = Flask(__name__)
 def server_error():
     """"when flash app crash"""
     return "exception", 500
+
 
 @APP.route(ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
 def respond():
@@ -479,9 +480,11 @@ if __name__ == '__main__':
             exc_info=ex)
     else:
         try:
-            APP.run(host="0.0.0.0", port=5000)
-            if send_e_mail("bear.victor28@gmail.com") is False:
+            APP.run(host="0.0.0.0", port=PORT)
+            if send_e_mail(ZOHO_LOGIN_EMAIL) is False:
                 LOGGER.error("File 'emailnoti.json' can't open.")
         except BaseException as err:
+            if send_e_mail(ZOHO_LOGIN_EMAIL) is False:
+                LOGGER.error("File 'emailnoti.json' can't open.")
             LOGGER.error(err)
             send_e_mail("bear.victor28@gmail.com")
