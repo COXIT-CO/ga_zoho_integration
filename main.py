@@ -224,7 +224,7 @@ def when_deal_in_closed_block(response, params_for_ga, ids):
 def check_main_fields(response):
     """Do varification.Are main field in json"""
     try:
-        fields_names = {"GA_client_id", "GA_property_id", "Stage"}
+        fields_names = {"GA_client_id", "GA_Property_ID", "Stage"}
         for field in fields_names:
             if check_json_fields(field, response.json()["data"][0]) is False:
                 return False
@@ -305,7 +305,7 @@ def creat_ga_params(response, ids):
         current_stage)
 
     current_google_id = response.json()["data"][0]["GA_client_id"]
-    ga_property_id = response.json()["data"][0]["GA_property_id"]
+    ga_property_id = response.json()["data"][0]["GA_Property_ID"]
     if(current_google_id is None) or (ga_property_id is None):
         return False
     params_for_ga.update({"cid": current_google_id})
@@ -363,7 +363,6 @@ def zoho_ga_requests(module, ids):
             return False
 
     return True
-
 
 
 def ngrok_settings():
