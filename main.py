@@ -274,6 +274,8 @@ def first_response_to_ga(response, params_for_ga, current_stage, ids):
     if varification_ga_request(response, params_for_ga, current_stage, ids) is False:
         return False
     expected_revenue = response.json()["data"][0]["Expected_Revenue"]
+    if expected_revenue is None:
+        expected_revenue = 0
     params_for_ga.update({"ec": "Expected_revenue_change"})
     params_for_ga.update({"ev": int(round(expected_revenue))})
     params_for_ga.update({"el": "Exp_revenue " + current_stage})
