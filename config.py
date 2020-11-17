@@ -1,16 +1,9 @@
 """Configuration module for logging"""
+import errno
 import logging
-from os import mkdir
+from os import makedirs, symlink
 
-LOG_DIR = "./logs/"
-
-try:
-    mkdir(LOG_DIR)
-except OSError:
-    print"Logs directory exists."
-else:
-    print"Successfully created the logs directory"
-
+LOG_DIR = ""
 
 LOG_CONFIG = dict(
     version=1,
@@ -38,7 +31,7 @@ LOG_CONFIG = dict(
                 'class': 'logging.handlers.TimedRotatingFileHandler',
                 'formatter': 'detailed',
                 'level': logging.INFO,
-                'filename': LOG_DIR+'logfile',
+                'filename': LOG_DIR + 'logfile',
                 'when': 'midnight',
             },
     },
@@ -47,3 +40,21 @@ LOG_CONFIG = dict(
         'level': logging.INFO,
     },
 )
+
+
+def init_logdir(logpath):
+    global LOG_DIR
+    dest = '/home/ga_zoho_logs'
+    try:
+        makedirs(logpath)
+    except OSError as ex:
+        if ex.errno != errno.EEXIST:
+            logging.exception("Problems with creating log directory", exc_info=ex)
+            init_logdir('./logs')
+            return False
+        else:
+            print('Log directory already created at ' + logpath)
+    else:
+        print("Successfully created the logs directory at: \n" + logpath)
+    LOG_DIR = logpath
+    symlink(logpath, dest)
