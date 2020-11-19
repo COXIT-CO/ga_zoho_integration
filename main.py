@@ -487,4 +487,4 @@ if __name__ == '__main__':
             if send_e_mail(ZOHO_LOGIN_EMAIL) is False:
                 LOGGER.error("File 'emailnoti.json' can't open.")
             LOGGER.error(err)
-            send_e_mail("bear.victor28@gmail.com")
+            send_e_mail(ZOHO_LOGIN_EMAIL)
