@@ -1,5 +1,5 @@
 # pylint: disable=global-statement,import-error
-""""In this module, we write all imports and global variables"""
+"""Python script which integrates Zoho CRM deals data with google analytics"""
 import argparse
 from datetime import datetime, timedelta
 import time
@@ -216,7 +216,6 @@ def when_deal_in_closed_block(response, params_for_ga, ids):
 
     data_from_field = response.json()["data"][0]["Deal_Size"]
     params_for_ga.update({"cd8": data_from_field})
-
     params_for_ga.update({"cd2": ids})
 
     return True
@@ -225,7 +224,7 @@ def when_deal_in_closed_block(response, params_for_ga, ids):
 def check_main_fields(response):
     """Do varification.Are main field in json"""
     try:
-        fields_names = {"GA_client_id", "GA_property_id", "Stage",}
+        fields_names = {"GA_client_id", "GA_Property_ID", "Stage"}
         for field in fields_names:
             if check_json_fields(field, response.json()["data"][0]) is False:
                 return False
@@ -275,6 +274,8 @@ def first_response_to_ga(response, params_for_ga, current_stage, ids):
     if varification_ga_request(response, params_for_ga, current_stage, ids) is False:
         return False
     expected_revenue = response.json()["data"][0]["Expected_Revenue"]
+    if expected_revenue is None:
+        expected_revenue = 0
     params_for_ga.update({"ec": "Expected_revenue_change"})
     params_for_ga.update({"ev": int(round(expected_revenue))})
     params_for_ga.update({"el": "Exp_revenue " + current_stage})
@@ -306,7 +307,7 @@ def creat_ga_params(response, ids):
         current_stage)
 
     current_google_id = response.json()["data"][0]["GA_client_id"]
-    ga_property_id = response.json()["data"][0]["GA_property_id"]
+    ga_property_id = response.json()["data"][0]["GA_Property_ID"]
     if(current_google_id is None) or (ga_property_id is None):
         return False
     params_for_ga.update({"cid": current_google_id})
@@ -366,7 +367,7 @@ def zoho_ga_requests(module, ids):
     return True
 
 
-
+  
 def ngrok_settings():
     """configure ngrok settings"""
     ngrok.set_auth_token(NGROK_TOKEN)
