@@ -20,6 +20,7 @@ def init_logdir(logpath):
         return logpath
 
 def init_log_config(log_dir, handlers):
+    """initialize log config dictionary"""
     return dict(
         version=1,
         formatters={
