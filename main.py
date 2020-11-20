@@ -216,7 +216,6 @@ def when_deal_in_closed_block(response, params_for_ga, ids):
 
     data_from_field = response.json()["data"][0]["Deal_Size"]
     params_for_ga.update({"cd8": data_from_field})
-
     params_for_ga.update({"cd2": ids})
 
     return True
