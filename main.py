@@ -17,7 +17,7 @@ import zcrmsdk as zoho_crm
 from flask import Flask, request, Response
 from pyngrok import ngrok
 
-from config import LOG_CONFIG, init_logdir
+from config import init_log_config, init_logdir
 
 ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
 ZOHO_LOGIN_EMAIL, ZOHO_GRANT_TOKEN, ZOHO_API_URI, ACCESS_TOKEN, \
@@ -47,7 +47,7 @@ def initialize_variables():
 
     # change global variebles
     global ZOHO_LOGIN_EMAIL, ZOHO_GRANT_TOKEN, ZOHO_API_URI, NGROK_TOKEN, \
-        PORT, LOGGER, LOG_CONFIG
+        PORT, LOGGER
 
     parser = create_parser()
     namespace = parser.parse_args(sys.argv[1:])
@@ -62,11 +62,10 @@ def initialize_variables():
     NGROK_TOKEN = namespace.ngrok_token
     PORT = namespace.port
 
-    init_logdir(namespace.logpath)
-    LOG_CONFIG['root']['handlers'].append(namespace.logmode)
+    log_path = init_logdir(namespace.logpath)
     flask_log = logging.getLogger('werkzeug')
     flask_log.setLevel(logging.ERROR)
-    dictConfig(LOG_CONFIG)
+    dictConfig(init_log_config(log_path, namespace.logmode))
     LOGGER = logging.getLogger()
 
     config = {

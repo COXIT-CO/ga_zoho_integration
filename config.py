@@ -3,47 +3,8 @@ import errno
 import logging
 from os import makedirs, symlink
 
-LOG_DIR = ""
-
-LOG_CONFIG = dict(
-    version=1,
-    formatters={
-        'simple':
-            {
-                'format': '[%(asctime)s] [%(levelname)s] - : %(message)s.',
-                'datefmt': '%H:%M:%S',
-            },
-        'detailed':
-            {
-                'format': '[%(asctime)s] [%(levelname)s] - Line: %(lineno)d '
-                          '- %(name)s - : %(message)s.',
-                'datefmt': '%d/%m/%y - %H:%M:%S',
-            },
-    },
-    handlers={
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
-            'level': logging.INFO,
-        },
-        'file':
-            {
-                'class': 'logging.handlers.TimedRotatingFileHandler',
-                'formatter': 'detailed',
-                'level': logging.INFO,
-                'filename': LOG_DIR + 'logfile',
-                'when': 'midnight',
-            },
-    },
-    root={
-        'handlers': ['file', ],
-        'level': logging.INFO,
-    },
-)
-
-
 def init_logdir(logpath):
-    global LOG_DIR
+    """create log directory and symbolic link"""
     dest = '/home/ga_zoho_logs'
     try:
         makedirs(logpath)
@@ -51,10 +12,46 @@ def init_logdir(logpath):
         if ex.errno != errno.EEXIST:
             logging.exception("Problems with creating log directory", exc_info=ex)
             init_logdir('./logs')
-            return False
         else:
-            print('Log directory already created at ' + logpath)
+            print "Log directory already created at " + logpath
     else:
-        print("Successfully created the logs directory at: \n" + logpath)
-    LOG_DIR = logpath
-    symlink(logpath, dest)
+        print "Successfully created the logs directory at: \n" + logpath
+        symlink(logpath, dest)
+        return logpath
+
+def init_log_config(log_dir, handlers):
+    return dict(
+        version=1,
+        formatters={
+            'simple':
+                {
+                    'format': '[%(asctime)s] [%(levelname)s] - : %(message)s.',
+                    'datefmt': '%H:%M:%S',
+                },
+            'detailed':
+                {
+                    'format': '[%(asctime)s] [%(levelname)s] - Line: %(lineno)d '
+                              '- %(name)s - : %(message)s.',
+                    'datefmt': '%d/%m/%y - %H:%M:%S',
+                },
+        },
+        handlers={
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
+                'level': logging.INFO,
+            },
+            'file':
+                {
+                    'class': 'logging.handlers.TimedRotatingFileHandler',
+                    'formatter': 'detailed',
+                    'level': logging.INFO,
+                    'filename': log_dir + 'logfile',
+                    'when': 'midnight',
+                },
+        },
+        root={
+            'handlers': ['file', ].append(handlers),
+            'level': logging.INFO,
+        },
+    )
