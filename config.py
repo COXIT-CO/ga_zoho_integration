@@ -2,6 +2,7 @@
 import argparse
 import errno
 import logging
+import logging.handlers
 import sys
 from logging.config import dictConfig
 from os import makedirs, symlink
@@ -14,8 +15,8 @@ class AppConfig:
         self.args = parser.parse_args(sys.argv[1:])
         self.port = self.args.port
         self.notify_url = self.ngrok_settings(self.args.ngrok_token, self.port)
-        self.logger = self.init_logger(self.args)
         self.ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
+        self.init_logger()
 
     def create_parser(self):
         """Creat parameters passing from console"""
@@ -36,13 +37,30 @@ class AppConfig:
         ngrok.set_auth_token(token)
         return str(ngrok.connect(port=port))
 
-    def init_logger(self, args):
-        log_path = self.init_logdir(args.logpath)
+    def init_logger(self,):
+        logger = logging.getLogger('app')
+        logger.setLevel(logging.INFO)
+        log_path = self.init_logdir(self.args.logpath)
+
+        detailed_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - '
+                                                   'Line: %(lineno)d - %(name)s - : %(message)s.',
+                                               datefmt='%H:%M:%S')
+
+        file_handler = logging.handlers.TimedRotatingFileHandler(log_path+'logfile', when='midnight')
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(detailed_formatter)
+        logger.addHandler(file_handler)
+
+        if self.args.logmode == 'console':
+            simple_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - : %(message)s.',
+                                                 datefmt='%H:%M:%S')
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.INFO)
+            console_handler.setFormatter(simple_formatter)
+            logger.addHandler(console_handler)
+
         flask_log = logging.getLogger('werkzeug')
         flask_log.setLevel(logging.ERROR)
-        dictConfig(self.init_log_config(log_path, args.logmode))
-        _logger = logging.getLogger()
-        return _logger
 
     def init_logdir(self, logpath):
         """create log directory and symbolic link"""
@@ -55,47 +73,9 @@ class AppConfig:
                 self.init_logdir('./logs')
             else:
                 print "Log directory already created at " + logpath
-                # symlink(logpath, dest)
+                symlink(logpath, dest)
                 return logpath
         else:
             print "Successfully created the logs directory at: \n" + logpath
-            # symlink(logpath, dest)
+            symlink(logpath, dest)
             return logpath
-
-    def init_log_config(self, log_dir, handlers):
-        """initialize log config dictionary"""
-        return dict(
-            version=1,
-            formatters={
-                'simple':
-                    {
-                        'format': '[%(asctime)s] [%(levelname)s] - : %(message)s.',
-                        'datefmt': '%H:%M:%S',
-                    },
-                'detailed':
-                    {
-                        'format': '[%(asctime)s] [%(levelname)s] - Line: %(lineno)d '
-                                  '- %(name)s - : %(message)s.',
-                        'datefmt': '%d/%m/%y - %H:%M:%S',
-                    },
-            },
-            handlers={
-                'console': {
-                    'class': 'logging.StreamHandler',
-                    'formatter': 'simple',
-                    'level': logging.INFO,
-                },
-                'file':
-                    {
-                        'class': 'logging.handlers.TimedRotatingFileHandler',
-                        'formatter': 'detailed',
-                        'level': logging.INFO,
-                        'filename': log_dir + 'logfile',
-                        'when': 'midnight',
-                    },
-            },
-            root={
-                'handlers': ['file', ].append(handlers),
-                'level': logging.INFO,
-            },
-        )

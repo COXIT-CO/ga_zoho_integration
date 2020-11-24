@@ -1,12 +1,14 @@
 import json
 import requests
 from flask import Response
+from logging import getLogger
+
+LOGGER = getLogger('app')
 
 
 class GaAPI:
-    def __init__(self, config):
+    def __init__(self):
         self.response = None
-        self.logger = config.logger
         self.params = {
             "v": "1",
             "t": "event",
@@ -28,7 +30,7 @@ class GaAPI:
                 params=params)
             response.raise_for_status()
         except requests.RequestException as ex:
-            self.logger(
+            LOGGER.error(
                 "Unable to send post request to Google Analytics" +
                 "response.status_code = " +
                 str(
@@ -38,7 +40,7 @@ class GaAPI:
                 exc_info=ex)
             return Response(status=401)
         else:
-            self.logger.info(
+            LOGGER.info(
                 "Update successfully sent to Google Analytic")
             return Response(status=200)
 
@@ -130,7 +132,7 @@ class GaAPI:
         current_stage = response.json()["data"][0]["Stage"]
         _params.update({"el": current_stage})
 
-        self.logger.info(
+        LOGGER.info(
             "id=" +
             ids +
             ": current stage is " +
@@ -155,7 +157,7 @@ class GaAPI:
         if self.stage_changes(data_stage):
             return True
         else:
-            self.logger.info("Stage was not changed. Event was not sent")
+            LOGGER.info("Stage was not changed. Event was not sent")
             return False
 
     def when_deal_in_closed_block(self, response):
@@ -179,7 +181,7 @@ class GaAPI:
                 if self.check_json_fields(field, response.json()["data"][0]) is False:
                     return False
         except ValueError:
-            self.logger.error("Incorrect response JSON data")
+            LOGGER.error("Incorrect response JSON data")
             return False
 
         return True
@@ -188,13 +190,13 @@ class GaAPI:
         """"write logs if bad fields"""
         if name_field in data_json:
             if data_json[name_field]:
-                self.logger.info("%s is found!", name_field)
+                LOGGER.info("%s is found!", name_field)
                 return True
             else:
-                self.logger.warning(
+                LOGGER.warning(
                     "%s is empty. Make sure you fill in it in CRM.", name_field)
         else:
-            self.logger.warning(
+            LOGGER.warning(
                 "%s is not found. Make sure you populate it in CRM.", name_field)
             return False
         return True
