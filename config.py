@@ -8,12 +8,12 @@ from os import makedirs, symlink
 from pyngrok import ngrok
 
 
-class Config:
+class AppConfig:
     def __init__(self):
         parser = self.create_parser()
         self.args = parser.parse_args(sys.argv[1:])
         self.port = self.args.port
-        self.notify_url= self.ngrok_settings(self.args.ngrok_token, self.port)
+        self.notify_url = self.ngrok_settings(self.args.ngrok_token, self.port)
         self.logger = self.init_logger(self.args)
         self.ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
 
@@ -55,9 +55,11 @@ class Config:
                 self.init_logdir('./logs')
             else:
                 print "Log directory already created at " + logpath
+                # symlink(logpath, dest)
+                return logpath
         else:
             print "Successfully created the logs directory at: \n" + logpath
-            symlink(logpath, dest)
+            # symlink(logpath, dest)
             return logpath
 
     def init_log_config(self, log_dir, handlers):
