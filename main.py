@@ -8,10 +8,11 @@ from flask import Flask, request, Response
 from apis.zoho_api import ZohoAPI
 from apis.ga_api import GaAPI
 from requests import RequestException
+from logging import getLogger
 
 APP = Flask(__name__)
 CONFIGS = AppConfig()
-
+LOGGER = getLogger('app')
 
 @APP.route(CONFIGS.ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
 def respond():
@@ -36,16 +37,16 @@ if __name__ == '__main__':
     try:
         zoho = ZohoAPI(CONFIGS)
     except OAuthUtility.ZohoOAuthException as ex:
-        CONFIGS.logger.error(ex)
+        LOGGER.error(ex)
         sys.exit("Passed data in parameters is invalid. Script is terminated")
-    ga = GaAPI(CONFIGS)
+    ga = GaAPI()
     try:
         zoho.enable_notifications()
         t = Timer(23 * 3600, zoho.enable_notifications())
         t.start()
 
     except RequestException as ex:
-        CONFIGS.logger.error(
+        LOGGER.error(
             "ZohoCRM does not response. Check selected scopes generating grant_token",
             exc_info=ex)
     else:

@@ -5,7 +5,9 @@ from os import path
 import pytz
 import zcrmsdk as zoho_crm
 import requests
+from logging import getLogger
 
+LOGGER = getLogger('app')
 
 class ZohoAPI:
     def __init__(self, configs):
@@ -27,7 +29,6 @@ class ZohoAPI:
             "accounts_url": "https://accounts.zoho." + self.api_uri,
         }
         self.access_token = self.init_access_token()
-        self.logger = configs.logger
         self.notify_url = configs.notify_url
 
     def init_access_token(self):
@@ -47,7 +48,7 @@ class ZohoAPI:
             oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
             self.access_token = oauth_client.get_access_token(self.login_email)
         except zoho_crm.OAuthUtility.ZohoOAuthException:
-            self.logger.error("Unable to refresh access token")
+            LOGGER.error("Unable to refresh access token")
             return False
         return True
 
@@ -64,7 +65,7 @@ class ZohoAPI:
                 headers=auth_header)
             response.raise_for_status()
         except requests.RequestException as ex:
-            self.logger.error(
+            LOGGER.error(
                 "The application can not get access to Zoho. Check the access token",
                 exc_info=ex)
             return None
@@ -87,9 +88,9 @@ class ZohoAPI:
             data=json.dumps(self.make_input_json()))
 
         if resp.status_code == 202:
-            self.logger.error("Failed to subscribe for notifications")
-            self.logger.error("status_code: %s", str(resp.status_code))
-            self.logger.error(resp.text)
+            LOGGER.error("Failed to subscribe for notifications")
+            LOGGER.error("status_code: %s", str(resp.status_code))
+            LOGGER.error(resp.text)
 
         resp.raise_for_status()
 
@@ -99,7 +100,7 @@ class ZohoAPI:
                                         timedelta(days=1)
         expiration_time_iso_format = notifications_expiration_time.replace(
             tzinfo=pytz.utc).isoformat()
-        self.logger.warning(
+        LOGGER.warning(
             "Notifications channel will expire at %s",
             expiration_time_iso_format)
 
