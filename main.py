@@ -38,9 +38,9 @@ if __name__ == '__main__':
     ga = GaAPI()
     try:
         zoho.enable_notifications()
-        enable_notifications_thread = Timer(23 * 3600, zoho.enable_notifications())
+        enable_notifications_thread = Timer(23 * 3600, zoho.enable_notifications)
         enable_notifications_thread.start()
-        refresh_token_thread = Timer(3300, zoho.refresh_access_token())
+        refresh_token_thread = Timer(3300, zoho.refresh_access_token)
         refresh_token_thread.start()
         # TODO: close theads correctly
     except RequestException as ex:
