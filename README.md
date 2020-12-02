@@ -2,7 +2,7 @@
 Python script which integrates Zoho CRM Deals data with Google Analytics
 sending event hits to Google Analytics property.
 
-## Requirments
+## Requirements
 
 Python 2.7
 
@@ -57,8 +57,7 @@ To use not 80 port you will need to do additional proxy server set up.
 
 `-ngrok`: your ngrok token from https://dashboard.ngrok.com/login
 
-
-`-ngrok`: your ngrok token from https://dashboard.ngrok.com/login
+`-debug`: parameter without value. Enable to show debug level logs.
 
 
 For the very first time you will need to specify grant token `-ga`. How to generate it
