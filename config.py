@@ -4,7 +4,6 @@ import errno
 import logging
 import logging.handlers
 import sys
-from logging.config import dictConfig
 from os import makedirs, symlink
 from pyngrok import ngrok
 
@@ -14,8 +13,8 @@ class AppConfig:
         parser = self.create_parser()
         self.args = parser.parse_args(sys.argv[1:])
         self.port = self.args.port
-        self.notify_url = self.ngrok_settings(self.args.ngrok_token, self.port)
         self.ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
+        self.ngrok_url = self.ngrok_settings(self.args.ngrok_token, self.port)
         self.init_logger()
 
     def create_parser(self):
@@ -30,6 +29,7 @@ class AppConfig:
         parser.add_argument('-port', '--port', default='80')
         parser.add_argument('-logmode', '--logmode', default='file')
         parser.add_argument('-logpath', '--logpath', default='./logs')
+        parser.add_argument('-debug', '--debug', action='store_true')
         return parser
 
     def ngrok_settings(self, token, port):
@@ -39,15 +39,17 @@ class AppConfig:
 
     def init_logger(self,):
         logger = logging.getLogger('app')
-        logger.setLevel(logging.INFO)
-        log_path = self.init_logdir(self.args.logpath)
-
+        log_level = logging.INFO
+        if self.args.debug:
+            log_level = logging.DEBUG
+        logger.setLevel(log_level)
+        log_path = self.init_logdir(self.args.logpath)+'/'
         detailed_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - '
                                                    'Line: %(lineno)d - %(name)s - : %(message)s.',
                                                datefmt='%H:%M:%S')
 
         file_handler = logging.handlers.TimedRotatingFileHandler(log_path+'logfile', when='midnight')
-        file_handler.setLevel(logging.INFO)
+        file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(detailed_formatter)
         logger.addHandler(file_handler)
 
@@ -55,7 +57,7 @@ class AppConfig:
             simple_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - : %(message)s.',
                                                  datefmt='%H:%M:%S')
             console_handler = logging.StreamHandler()
-            console_handler.setLevel(logging.INFO)
+            console_handler.setLevel(log_level)
             console_handler.setFormatter(simple_formatter)
             logger.addHandler(console_handler)
 
