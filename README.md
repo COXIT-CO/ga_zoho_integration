@@ -2,7 +2,7 @@
 Python script which integrates Zoho CRM Deals data with Google Analytics
 sending event hits to Google Analytics property.
 
-## Requirments
+## Requirements
 
 Python 2.7
 
@@ -51,9 +51,13 @@ from Zoho CRM
 `-port`: port for Zoho CRM notifications Webhook server. By default it's 80.
 To use not 80 port you will need to do additional proxy server set up.
 
-`-log`: mode of logging handling. To enable logging to console pass 'console'. By default it's 'file'
+`-logmode`: mode of logging handling. To enable logging to console pass 'console'. By default it's 'file'
+
+`-logpath`: path of storing logs. By dafault it's script path + 'logs' directory.
 
 `-ngrok`: your ngrok token from https://dashboard.ngrok.com/login
+
+`-debug`: parameter without value. Enable to show debug level logs.
 
 
 For the very first time you will need to specify grant token `-ga`. How to generate it
