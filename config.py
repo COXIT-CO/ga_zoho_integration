@@ -43,7 +43,9 @@ class AppConfig:
         if self.args.debug:
             log_level = logging.DEBUG
         logger.setLevel(log_level)
-        log_path = self.init_logdir(self.args.logpath)+'/'
+        log_path = self.init_logdir(self.args.logpath)
+        self.create_symlink(log_path)
+        log_path += '/'
         detailed_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - '
                                                    'Line: %(lineno)d - %(name)s - : %(message)s.',
                                                datefmt='%H:%M:%S')
@@ -66,7 +68,6 @@ class AppConfig:
 
     def init_logdir(self, logpath):
         """create log directory and symbolic link"""
-        dest = '/home/ga_zoho_logs'
         try:
             makedirs(logpath)
         except OSError as ex:
@@ -74,10 +75,18 @@ class AppConfig:
                 logging.exception("Problems with creating log directory", exc_info=ex)
                 self.init_logdir('./logs')
             else:
-                print "Log directory already created at " + logpath
-                symlink(logpath, dest)
+                logging.info( "Log directory already created at " + logpath)
                 return logpath
         else:
             print "Successfully created the logs directory at: \n" + logpath
-            symlink(logpath, dest)
             return logpath
+
+    def create_symlink(self, logpath):
+        dest = '/home/ga_zoho_logs'
+        try:
+            symlink(logpath, dest)
+        except OSError as ex:
+            if ex.errno != errno.EEXIST:
+                logging.exception("Problems with creating log directory. Symlink is not created", exc_info=ex)
+            else:
+                logging.info("Symlink is already created at " + dest)
