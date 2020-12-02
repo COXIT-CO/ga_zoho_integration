@@ -65,6 +65,8 @@ class AppConfig:
 
         flask_log = logging.getLogger('werkzeug')
         flask_log.setLevel(logging.ERROR)
+        root_h = logging.root.handlers[0]
+        logging.root.removeHandler(root_h)
 
     def init_logdir(self, logpath):
         """create log directory and symbolic link"""
@@ -78,7 +80,7 @@ class AppConfig:
                 logging.info( "Log directory already created at " + logpath)
                 return logpath
         else:
-            print "Successfully created the logs directory at: \n" + logpath
+            logging.info("Successfully created the logs directory at: \n" + logpath)
             return logpath
 
     def create_symlink(self, logpath):
