@@ -23,7 +23,7 @@ class GaAPI:
         google_analytics_api_uri = "https://www.google-analytics.com"
         google_analytics_collect_endpoint = "/collect"
         try:
-            print "parameters for GA:\n", params
+            LOGGER.debug("Parameters for GA:\n" + json.dumps(params, indent=2))
             response = requests.post(
                 url=google_analytics_api_uri +
                 google_analytics_collect_endpoint,
@@ -75,6 +75,7 @@ class GaAPI:
                 return Response(status=500)
         else:
             return Response(status=500)
+        return Response(status=200)
 
     @staticmethod
     def update_params_disqualified_stage(response, params):
@@ -118,7 +119,7 @@ class GaAPI:
         if not self.check_main_fields(response):
             return False
         current_google_id = response.json()["data"][0]["GA_client_id"]
-        ga_property_id = response.json()["data"][0]["GA_Property_ID"]
+        ga_property_id = response.json()["data"][0]["GA_property_id"]
         if (current_google_id is None) or (ga_property_id is None):
             return False
         if not self.check_json_fields("Amount", response.json()["data"][0]) or \
@@ -139,7 +140,7 @@ class GaAPI:
             current_stage)
 
         current_google_id = response.json()["data"][0]["GA_client_id"]
-        ga_property_id = response.json()["data"][0]["GA_Property_ID"]
+        ga_property_id = response.json()["data"][0]["GA_property_id"]
         _params.update({"cid": current_google_id})
         _params.update({"tid": ga_property_id})
 
@@ -176,7 +177,7 @@ class GaAPI:
     def check_main_fields(self, response):
         """Do varification.Are main field in json"""
         try:
-            fields_names = {"GA_client_id", "GA_Property_ID", "Stage"}
+            fields_names = {"GA_client_id", "GA_property_id", "Stage"}
             for field in fields_names:
                 if self.check_json_fields(field, response.json()["data"][0]) is False:
                     return False
@@ -190,7 +191,7 @@ class GaAPI:
         """"write logs if bad fields"""
         if name_field in data_json:
             if data_json[name_field]:
-                LOGGER.info("%s is found!", name_field)
+                LOGGER.debug("%s is found!", name_field)
                 return True
             else:
                 LOGGER.warning(
