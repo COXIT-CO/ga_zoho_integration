@@ -14,14 +14,10 @@ APP = Flask(__name__)
 CONFIGS = AppConfig()
 LOGGER = getLogger('app')
 
+
 @APP.route(CONFIGS.ZOHO_NOTIFICATIONS_ENDPOINT, methods=['POST'])
 def respond():
-    """generate post request to google analytics  """
-
-    if zoho.refresh_access_token() :
-        return Response(status=500)
-    # getting deals records
-
+    """receives data from zoho and posts it to google analytics  """
     if "module" not in request.json:
         return Response(status=500)
 
@@ -42,9 +38,11 @@ if __name__ == '__main__':
     ga = GaAPI()
     try:
         zoho.enable_notifications()
-        t = Timer(23 * 3600, zoho.enable_notifications())
-        t.start()
-
+        enable_notifications_thread = Timer(23 * 3600, zoho.enable_notifications())
+        enable_notifications_thread.start()
+        refresh_token_thread = Timer(3300, zoho.refresh_access_token())
+        refresh_token_thread.start()
+        # TODO: close theads correctly
     except RequestException as ex:
         LOGGER.error(
             "ZohoCRM does not response. Check selected scopes generating grant_token",
