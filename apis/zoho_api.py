@@ -11,7 +11,6 @@ LOGGER = getLogger('app')
 
 class ZohoAPI:
     def __init__(self, configs):
-        # Add parameters passing from console
         args = configs.args
         self.client_id = args.client_id
         self.client_secret = args.client_secret
@@ -29,7 +28,7 @@ class ZohoAPI:
             "accounts_url": "https://accounts.zoho." + self.api_uri,
         }
         self.access_token = self.init_access_token()
-        self.notify_url = configs.notify_url
+        self.notify_url = configs.ngrok_url + configs.ZOHO_NOTIFICATIONS_ENDPOINT
 
     def init_access_token(self):
         """creating _ACCESS_TOKEN and we check: how init this token """
