@@ -46,6 +46,7 @@ class ZohoAPI:
         try:
             oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
             self.access_token = oauth_client.get_access_token(self.login_email)
+            LOGGER.info("Acccess token refreshed")
         except zoho_crm.OAuthUtility.ZohoOAuthException:
             LOGGER.error("Unable to refresh access token")
             return False
