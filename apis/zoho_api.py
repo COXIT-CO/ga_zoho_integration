@@ -1,44 +1,52 @@
+# pylint: disable=import-error
+"""Module to define ZohoAPI class"""
 import json
+import sys
 from datetime import datetime, timedelta
 from os import path
-
-import pytz
-import zcrmsdk as zoho_crm
-import requests
 from logging import getLogger
+import pytz
+import requests
+from requests import RequestException
+import zcrmsdk as zoho_crm
 
 LOGGER = getLogger('app')
 
+
 class ZohoAPI:
+    """contains methods and fields to access to Zoho and receive response for GA. """
     def __init__(self, configs):
         args = configs.args
-        self.client_id = args.client_id
-        self.client_secret = args.client_secret
-        self.login_email = args.email
         self.grant_token = args.grant_token
         self.api_uri = args.api_uri
         self.api_base_url = "https://www.zohoapis." + self.api_uri
-        self.config = {
+        self.login_email = args.email
+        self.login_config = {
             "apiBaseUrl": self.api_base_url,
             "token_persistence_path": "./",
             "currentUserEmail": self.login_email,
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
+            "client_id": args.client_id,
+            "client_secret": args.client_secret,
             "redirect_uri": "coxit.co",
             "accounts_url": "https://accounts.zoho." + self.api_uri,
         }
+
         self.access_token = self.init_access_token()
-        self.notify_url = configs.ngrok_url + configs.ZOHO_NOTIFICATIONS_ENDPOINT
+        self.notify_url = configs.ngrok_url + configs.zoho_notification_endpoint
 
     def init_access_token(self):
         """creating _ACCESS_TOKEN and we check: how init this token """
-        zoho_crm.ZCRMRestClient.initialize(self.config)
-        oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
-        if path.isfile('./zcrm_oauthtokens.pkl'):
-            _access_token = oauth_client.get_access_token(self.login_email)
-        else:
-            oauth_tokens = oauth_client.generate_access_token(self.grant_token)
-            _access_token = oauth_tokens.get_access_token()
+        try:
+            zoho_crm.ZCRMRestClient.initialize(self.login_config)
+            oauth_client = zoho_crm.ZohoOAuth.get_client_instance()
+            if path.isfile('./zcrm_oauthtokens.pkl'):
+                _access_token = oauth_client.get_access_token(self.login_email)
+            else:
+                oauth_tokens = oauth_client.generate_access_token(self.grant_token)
+                _access_token = oauth_tokens.get_access_token()
+        except zoho_crm.OAuthUtility.ZohoOAuthException as ex:
+            LOGGER.error(ex)
+            sys.exit("Passed data in parameters is invalid. Script is terminated")
         return _access_token
 
     def refresh_access_token(self):
@@ -58,10 +66,10 @@ class ZohoAPI:
         try:
             response = requests.get(
                 url=self.api_base_url +
-                    "/crm/v2/" +
-                    module +
-                    "/" +
-                    ids,
+                "/crm/v2/" +
+                module +
+                "/" +
+                ids,
                 headers=auth_header)
             response.raise_for_status()
         except requests.RequestException as ex:
@@ -83,7 +91,7 @@ class ZohoAPI:
 
         resp = requests.post(
             url=self.api_base_url +
-                enable_notifications_endpoint,
+            enable_notifications_endpoint,
             headers=header,
             data=json.dumps(self.make_input_json()))
 
@@ -91,8 +99,12 @@ class ZohoAPI:
             LOGGER.error("Failed to subscribe for notifications")
             LOGGER.error("status_code: %s", str(resp.status_code))
             LOGGER.error(resp.text)
-
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except RequestException as ex:
+            LOGGER.error(
+                "ZohoCRM does not response. Check selected scopes generating grant_token",
+                exc_info=ex)
 
     def make_input_json(self):
         """create json for zoho notification"""

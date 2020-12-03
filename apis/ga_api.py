@@ -1,12 +1,15 @@
+"""Module to define GaApi class"""
 import json
+from logging import getLogger
 import requests
 from flask import Response
-from logging import getLogger
+
 
 LOGGER = getLogger('app')
 
 
 class GaAPI:
+    """Contains methods to process and send Zoho response to GA"""
     def __init__(self):
         self.response = None
         self.params = {
@@ -18,7 +21,8 @@ class GaAPI:
             "dp": "ZohoCRM",
         }
 
-    def post_request(self, response, params):
+    @staticmethod
+    def post_request(response, params):
         """"make request to google analytics"""
         google_analytics_api_uri = "https://www.google-analytics.com"
         google_analytics_collect_endpoint = "/collect"
@@ -79,6 +83,7 @@ class GaAPI:
 
     @staticmethod
     def update_params_disqualified_stage(response, params):
+        """Updates params for request disqualified_stage"""
         cd10 = response.json()["data"][0]["Reason_to_Disqualify"]
         params.update({"cd10": cd10})
         params.update({"ec": "crm_details_defined"})
@@ -88,6 +93,7 @@ class GaAPI:
 
     @staticmethod
     def update_params_closed_deal(response, params, ids):
+        """Updates params for request close stage"""
         data_from_field = response.json()["data"][0]["Amount"]
         if data_from_field is None:
             data_from_field = 0
@@ -106,7 +112,7 @@ class GaAPI:
 
     @staticmethod
     def update_params_first_request(response, params, current_stage):
-
+        """Updates params on disqualified_stage"""
         expected_revenue = response.json()["data"][0]["Expected_Revenue"]
         if expected_revenue is None:
             expected_revenue = 0
@@ -116,6 +122,7 @@ class GaAPI:
         return params
 
     def verify_response(self, response):
+        """verifies json of response"""
         if not self.check_main_fields(response):
             return False
         current_google_id = response.json()["data"][0]["GA_client_id"]
@@ -157,9 +164,8 @@ class GaAPI:
             data_stage = {ids + "e": current_stage}
         if self.stage_changes(data_stage):
             return True
-        else:
-            LOGGER.info("Stage was not changed. Event was not sent")
-            return False
+        LOGGER.info("Stage was not changed. Event was not sent")
+        return False
 
     def when_deal_in_closed_block(self, response):
         """"make exclusive ga params change when deals in block CLOSED"""
@@ -187,15 +193,15 @@ class GaAPI:
 
         return True
 
-    def check_json_fields(self, name_field, data_json):
+    @staticmethod
+    def check_json_fields(name_field, data_json):
         """"write logs if bad fields"""
         if name_field in data_json:
             if data_json[name_field]:
                 LOGGER.debug("%s is found!", name_field)
                 return True
-            else:
-                LOGGER.warning(
-                    "%s is empty. Make sure you fill in it in CRM.", name_field)
+            LOGGER.warning(
+                "%s is empty. Make sure you fill in it in CRM.", name_field)
         else:
             LOGGER.warning(
                 "%s is not found. Make sure you populate it in CRM.", name_field)
