@@ -1,5 +1,5 @@
 # pylint: disable=global-statement,import-error
-"""unittest for main.py file"""
+"""pytest for main.py file"""
 from apis.ga_api import GaAPI as GA
 import pytest
 from os import path, remove
@@ -32,19 +32,20 @@ def param_test_has_field(request):
 
 
 def test_compare_change_in_data(param_test_compare_change_in_data):
+    """test func compare change in data"""
     old_data = {"1": "q", "2": "w", "3": "e"}
     (new_data, expected_output) = param_test_compare_change_in_data
     result = GA.compare_stages(old_data, new_data)
     assert result is expected_output
 
 
-# def test_stage_changes(resource_setup):
-#     """test func save new data"""
-#     test_data = {"1": "test"}
-#     assert GA.stage_changes(test_data) is True
+def test_stage_changes(resource_setup):
+    """test func save new data"""
+    test_data = {"1": "test"}
+    assert GA.save_changed_stage(test_data) is True
 
 
-def test_check_field(param_test_has_field):
+def test_has_field(param_test_has_field):
     """test json field checker"""
     name_field = "test"
     (data_json, expected_output) = param_test_has_field
