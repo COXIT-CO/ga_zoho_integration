@@ -65,7 +65,7 @@ class GaAPI:
                     params = self.update_params_closed_deal(response, params, ids)
 
             if "Disqualified" in current_stage:
-                if self.check_json_fields("Reason_to_Disqualify", response.json()["data"][0]):
+                if self.has_field("Reason_to_Disqualify", response.json()["data"][0]):
                     if self.verify_stage(current_stage, ids):
                         self.post_request(response, params)
                         params = self.update_params_disqualified_stage(response, params)
@@ -129,8 +129,8 @@ class GaAPI:
         ga_property_id = response.json()["data"][0]["GA_property_id"]
         if (current_google_id is None) or (ga_property_id is None):
             return False
-        if not self.check_json_fields("Amount", response.json()["data"][0]) or \
-                not self.check_json_fields("Expected_Revenue", response.json()["data"][0]):
+        if not self.has_field("Amount", response.json()["data"][0]) or \
+                not self.has_field("Expected_Revenue", response.json()["data"][0]):
             return False
         return True
 
@@ -162,7 +162,7 @@ class GaAPI:
         data_stage = {ids: current_stage}
         if "Expected_revenue_change" in self.params["ec"]:
             data_stage = {ids + "e": current_stage}
-        if self.stage_changes(data_stage):
+        if self.save_changed_stage(data_stage):
             return True
         LOGGER.info("Stage was not changed. Event was not sent")
         return False
@@ -176,16 +176,16 @@ class GaAPI:
             "Deal_Size"}
 
         for field in fields_names:
-            if not self.check_json_fields(field, response.json()["data"][0]):
+            if not self.has_field(field, response.json()["data"][0]):
                 return False
         return True
 
     def check_main_fields(self, response):
-        """Do varification.Are main field in json"""
+        """Do verification. Are main field in json"""
         try:
             fields_names = {"GA_client_id", "GA_property_id", "Stage"}
             for field in fields_names:
-                if self.check_json_fields(field, response.json()["data"][0]) is False:
+                if self.has_field(field, response.json()["data"][0]) is False:
                     return False
         except ValueError:
             LOGGER.error("Incorrect response JSON data")
@@ -194,7 +194,7 @@ class GaAPI:
         return True
 
     @staticmethod
-    def check_json_fields(name_field, data_json):
+    def has_field(name_field, data_json):
         """"write logs if bad fields"""
         if name_field in data_json:
             if data_json[name_field]:
@@ -202,20 +202,21 @@ class GaAPI:
                 return True
             LOGGER.warning(
                 "%s is empty. Make sure you fill in it in CRM.", name_field)
+            return False
         else:
             LOGGER.warning(
                 "%s is not found. Make sure you populate it in CRM.", name_field)
             return False
-        return True
 
-    def stage_changes(self, new_data):
+    @staticmethod
+    def save_changed_stage(new_data):
         """Save and compare data about stage in json file"""
         flag = True
         try:
             with open("data_file.json", "r") as read_file:
                 old_data = json.load(read_file)
 
-            if self.compare_change_in_data(old_data, new_data):
+            if GaAPI.compare_stages(old_data, new_data):
                 old_data.update(new_data)
             else:
                 flag = False
@@ -230,7 +231,7 @@ class GaAPI:
         return flag
 
     @staticmethod
-    def compare_change_in_data(old_data, new_data):
+    def compare_stages(old_data, new_data):
         """compare old stages and new stage. Return false if stage isn`t change"""
         flag = False
 
