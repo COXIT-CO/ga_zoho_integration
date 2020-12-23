@@ -5,34 +5,41 @@ import sys
 from datetime import datetime, timedelta
 from os import path
 from logging import getLogger
+import configparser
 import requests
 from requests import RequestException
 import zcrmsdk as zoho_crm
 import pytz
+from setup import CONFIG_FILE
 
 LOGGER = getLogger('app')
 
 
 class ZohoAPI(object):
     """contains methods and fields to access to Zoho and receive response for GA. """
-    def __init__(self, configs):
-        args = configs.args
-        self.grant_token = args.grant_token
-        self.api_uri = args.api_uri
+
+    def __init__(self, api_config):
+        config = configparser.ConfigParser()
+        config.read(CONFIG_FILE)
+
+        self.grant_token = config['Zoho']['grant_token']
+        self.api_uri = config['Zoho']['api']
+
         self.api_base_url = "https://www.zohoapis." + self.api_uri
-        self.login_email = args.email
+        self.login_email = config['Zoho']['email']
+
         self.login_config = {
             "apiBaseUrl": self.api_base_url,
             "token_persistence_path": "./",
             "currentUserEmail": self.login_email,
-            "client_id": args.client_id,
-            "client_secret": args.client_secret,
+            "client_id": config['Zoho']['client_id'],
+            "client_secret": config['Zoho']['client_secret'],
             "redirect_uri": "coxit.co",
             "accounts_url": "https://accounts.zoho." + self.api_uri,
         }
 
         self.access_token = self.init_access_token()
-        self.notify_url = configs.ngrok_url + configs.zoho_notification_endpoint
+        self.notify_url = api_config.ngrok_url + api_config.zoho_notification_endpoint
 
     def init_access_token(self):
         """creating _ACCESS_TOKEN and we check: how init this token """
