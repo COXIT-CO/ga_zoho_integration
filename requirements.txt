@@ -1,5 +1,7 @@
+configparser==4.0.2
 Flask==1.1.2
 requests==2.24.0
 zcrmsdk==2.0.11
 pytz==2020.4
 pyngrok==4.2.2
+
