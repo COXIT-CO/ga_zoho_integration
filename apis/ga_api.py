@@ -1,3 +1,4 @@
+# pylint: disable=import-error
 """ Module to define GaAPI class """
 import json
 from logging import getLogger

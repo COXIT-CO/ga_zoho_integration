@@ -1,3 +1,4 @@
+# pylint: disable=import-error
 """Configuration module for logging"""
 import argparse
 import errno

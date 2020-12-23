@@ -1,3 +1,4 @@
+# pylint: disable=import-error
 """Python script which integrates Zoho CRM deals data with google analytics"""
 from threading import Timer
 from logging import getLogger
