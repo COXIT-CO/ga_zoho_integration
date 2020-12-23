@@ -1,9 +1,7 @@
-"""Module to define GaApi class"""
 import json
-from logging import getLogger
 import requests
 from flask import Response
-
+from logging import getLogger
 
 LOGGER = getLogger('app')
 
@@ -20,6 +18,7 @@ class GaAPI:
             "ua": "Opera / 9.80",
             "dp": "ZohoCRM",
         }
+
 
     @staticmethod
     def post_request(response, params):
@@ -207,7 +206,7 @@ class GaAPI:
             LOGGER.warning(
                 "%s is not found. Make sure you populate it in CRM.", name_field)
             return False
-
+          
     @staticmethod
     def save_changed_stage(new_data):
         """Save and compare data about stage in json file"""
@@ -215,6 +214,7 @@ class GaAPI:
         try:
             with open("data_file.json", "r") as read_file:
                 old_data = json.load(read_file)
+
 
             if GaAPI.compare_stages(old_data, new_data):
                 old_data.update(new_data)

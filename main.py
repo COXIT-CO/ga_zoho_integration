@@ -10,7 +10,6 @@ APP = Flask(__name__)
 CONFIGS = AppConfig()
 LOGGER = getLogger('app')
 
-
 @APP.route(CONFIGS.zoho_notification_endpoint, methods=['POST'])
 def respond():
     """receives data from zoho and posts it to google analytics  """
