@@ -4,64 +4,49 @@ import argparse
 import errno
 import logging
 import logging.handlers
-import sys
+import configparser
 from os import makedirs, symlink
 from pyngrok import ngrok
-
+from setup import CONFIG_FILE
 
 class AppConfig(object):
     """Class for configuring app"""
     def __init__(self):
-        parser = self.create_parser()
-        self.args = parser.parse_args(sys.argv[1:])
-        self.port = self.args.port
+        config = configparser.ConfigParser()
+        config.read(CONFIG_FILE)
+
+        self.port = config['ngrok']['port']
         self.zoho_notification_endpoint = "/zoho/deals/change"
-        self.ngrok_url = self.ngrok_settings(self.args.ngrok_token, self.port)
-        self.init_logger()
+        self.ngrok_url = self.ngrok_run(config['ngrok']['token'], self.port)
+        self.init_logger(config['logging'])
 
     @staticmethod
-    def create_parser():
-        """Creat parameters passing from console"""
-        parser = argparse.ArgumentParser()
-        parser.add_argument('-e', '--email')
-        parser.add_argument('-gt', '--grant_token')
-        parser.add_argument('-cid', '--client_id')
-        parser.add_argument('-cs', '--client_secret')
-        parser.add_argument('-api', '--api_uri', default='com')
-        parser.add_argument('-ngrok', '--ngrok_token')
-        parser.add_argument('-port', '--port', default='80')
-        parser.add_argument('-logmode', '--logmode', default='file')
-        parser.add_argument('-logpath', '--logpath', default='./logs')
-        parser.add_argument('-debug', '--debug', action='store_true')
-        return parser
-
-    @staticmethod
-    def ngrok_settings(token, port):
-        """configure ngrok settings"""
+    def ngrok_run(token, port):
+        """Run ngrok and return public url"""
         ngrok.set_auth_token(token)
         return str(ngrok.connect(port=port))
 
-    def init_logger(self,):
+    def init_logger(self, log_config):
         """creates app logger and configures it"""
         logger = logging.getLogger('app')
         log_level = logging.INFO
-        if self.args.debug:
+        if log_config['debug']:
             log_level = logging.DEBUG
         logger.setLevel(log_level)
-        log_path = self.init_logdir(self.args.logpath)
+        log_path = self.init_logdir(log_config['logpath'])
         self.create_symlink(log_path)
         log_path += '/'
         detailed_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - '
                                                    'Line: %(lineno)d - %(name)s - : %(message)s.',
                                                datefmt='%H:%M:%S')
 
-        file_handler = logging.handlers.TimedRotatingFileHandler(log_path+'logfile',
+        file_handler = logging.handlers.TimedRotatingFileHandler(log_path + 'logfile',
                                                                  when='midnight')
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(detailed_formatter)
         logger.addHandler(file_handler)
 
-        if self.args.logmode == 'console':
+        if log_config['logmode'] == 'console':
             simple_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - : '
                                                      '%(message)s.',
                                                  datefmt='%H:%M:%S')
