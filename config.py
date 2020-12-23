@@ -8,7 +8,7 @@ from os import makedirs, symlink
 from pyngrok import ngrok
 
 
-class AppConfig:
+class AppConfig(object):
     """Class for configuring app"""
     def __init__(self):
         parser = self.create_parser()
@@ -83,10 +83,10 @@ class AppConfig:
                 logging.exception("Problems with creating log directory", exc_info=ex)
                 self.init_logdir('./logs')
             else:
-                logging.info("Log directory already created at " + logpath)
+                logging.info("Log directory already created at %s", logpath)
                 return logpath
         else:
-            logging.info("Successfully created the logs directory at: \n" + logpath)
+            logging.info("Successfully created the logs directory at: \n%s", logpath)
             return logpath
 
     @staticmethod
@@ -100,4 +100,4 @@ class AppConfig:
                 logging.exception("Problems with creating log directory. Symlink is not created",
                                   exc_info=ex)
             else:
-                logging.info("Symlink is already created at " + dest)
+                logging.info("Symlink is already created at %s", dest)

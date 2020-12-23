@@ -1,12 +1,13 @@
+""" Module to define GaAPI class """
 import json
+from logging import getLogger
 import requests
 from flask import Response
-from logging import getLogger
 
 LOGGER = getLogger('app')
 
 
-class GaAPI:
+class GaAPI(object):
     """Contains methods to process and send Zoho response to GA"""
     def __init__(self):
         self.response = None
@@ -26,7 +27,7 @@ class GaAPI:
         google_analytics_api_uri = "https://www.google-analytics.com"
         google_analytics_collect_endpoint = "/collect"
         try:
-            LOGGER.debug("Parameters for GA:\n" + json.dumps(params, indent=2))
+            LOGGER.debug("Parameters for GA:\n%s", json.dumps(params, indent=2))
             response = requests.post(
                 url=google_analytics_api_uri +
                 google_analytics_collect_endpoint,
@@ -206,7 +207,7 @@ class GaAPI:
             LOGGER.warning(
                 "%s is not found. Make sure you populate it in CRM.", name_field)
             return False
-          
+
     @staticmethod
     def save_changed_stage(new_data):
         """Save and compare data about stage in json file"""

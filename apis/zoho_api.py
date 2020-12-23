@@ -5,15 +5,15 @@ import sys
 from datetime import datetime, timedelta
 from os import path
 from logging import getLogger
-import pytz
 import requests
 from requests import RequestException
 import zcrmsdk as zoho_crm
+import pytz
 
 LOGGER = getLogger('app')
 
 
-class ZohoAPI:
+class ZohoAPI(object):
     """contains methods and fields to access to Zoho and receive response for GA. """
     def __init__(self, configs):
         args = configs.args
