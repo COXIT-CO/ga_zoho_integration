@@ -1,3 +1,4 @@
+# pylint: disable=import-error
 """Configuration module for logging"""
 import argparse
 import errno
@@ -8,16 +9,18 @@ from os import makedirs, symlink
 from pyngrok import ngrok
 
 
-class AppConfig:
+class AppConfig(object):
+    """Class for configuring app"""
     def __init__(self):
         parser = self.create_parser()
         self.args = parser.parse_args(sys.argv[1:])
         self.port = self.args.port
-        self.ZOHO_NOTIFICATIONS_ENDPOINT = "/zoho/deals/change"
+        self.zoho_notification_endpoint = "/zoho/deals/change"
         self.ngrok_url = self.ngrok_settings(self.args.ngrok_token, self.port)
         self.init_logger()
 
-    def create_parser(self):
+    @staticmethod
+    def create_parser():
         """Creat parameters passing from console"""
         parser = argparse.ArgumentParser()
         parser.add_argument('-e', '--email')
@@ -32,29 +35,35 @@ class AppConfig:
         parser.add_argument('-debug', '--debug', action='store_true')
         return parser
 
-    def ngrok_settings(self, token, port):
+    @staticmethod
+    def ngrok_settings(token, port):
         """configure ngrok settings"""
         ngrok.set_auth_token(token)
         return str(ngrok.connect(port=port))
 
     def init_logger(self,):
+        """creates app logger and configures it"""
         logger = logging.getLogger('app')
         log_level = logging.INFO
         if self.args.debug:
             log_level = logging.DEBUG
         logger.setLevel(log_level)
-        log_path = self.init_logdir(self.args.logpath)+'/'
+        log_path = self.init_logdir(self.args.logpath)
+        self.create_symlink(log_path)
+        log_path += '/'
         detailed_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - '
                                                    'Line: %(lineno)d - %(name)s - : %(message)s.',
                                                datefmt='%H:%M:%S')
 
-        file_handler = logging.handlers.TimedRotatingFileHandler(log_path+'logfile', when='midnight')
+        file_handler = logging.handlers.TimedRotatingFileHandler(log_path+'logfile',
+                                                                 when='midnight')
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(detailed_formatter)
         logger.addHandler(file_handler)
 
         if self.args.logmode == 'console':
-            simple_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - : %(message)s.',
+            simple_formatter = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] - : '
+                                                     '%(message)s.',
                                                  datefmt='%H:%M:%S')
             console_handler = logging.StreamHandler()
             console_handler.setLevel(log_level)
@@ -63,10 +72,11 @@ class AppConfig:
 
         flask_log = logging.getLogger('werkzeug')
         flask_log.setLevel(logging.ERROR)
+        root_h = logging.root.handlers[0]
+        logging.root.removeHandler(root_h)
 
     def init_logdir(self, logpath):
         """create log directory and symbolic link"""
-        dest = '/home/ga_zoho_logs'
         try:
             makedirs(logpath)
         except OSError as ex:
@@ -74,10 +84,21 @@ class AppConfig:
                 logging.exception("Problems with creating log directory", exc_info=ex)
                 self.init_logdir('./logs')
             else:
-                print "Log directory already created at " + logpath
-                symlink(logpath, dest)
+                logging.info("Log directory already created at %s", logpath)
                 return logpath
         else:
-            print "Successfully created the logs directory at: \n" + logpath
-            symlink(logpath, dest)
+            logging.info("Successfully created the logs directory at: \n%s", logpath)
             return logpath
+
+    @staticmethod
+    def create_symlink(logpath):
+        """creates symbolic link for directory"""
+        dest = '/home/ga_zoho_logs'
+        try:
+            symlink(logpath, dest)
+        except OSError as ex:
+            if ex.errno != errno.EEXIST:
+                logging.exception("Problems with creating log directory. Symlink is not created",
+                                  exc_info=ex)
+            else:
+                logging.info("Symlink is already created at %s", dest)
