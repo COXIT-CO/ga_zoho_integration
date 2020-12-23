@@ -25,19 +25,17 @@ Users have to generate `ZOHO_GRANT_TOKEN`, so use this Scope:
 
 For more detailed instruction read Zoho CRM API Documentation: https://www.zoho.com/crm/developer/docs/api/v2/.
 
-# Run The Script
+# First start
 
 To start the script you should have Linux server with Python 2.7 and Pip installed to be able to install
-required libraries from `requirments.txt`. Also you will need public IP to be able to receive notifications
+required libraries from `requirements.txt`. Also you will need public IP to be able to receive notifications
 from Zoho CRM
 
- Copy this command to console replacing parameters with your account data:
+When you clone this repo and want to start programme:
+First of all u have to run 'setup.py' file with parameters:
 
-`python2.7 main.py -gt 1000.ba356065855a909c02543700807d5065.312087b477ec73c1413741a1ad14ef03
--e email_of_crm_user@email.com -cid 1000.IUOYW5741V7EA7IAV47NGSTUZKJRKU -cs 968c27e883b1c808b3674b7d1a0cb528b92af99cb6
--api com`
-
-`-gt`: grant token, is required only for the very first run of the script for CRM
+`-gt`: grant token, how to generate it follow instruction for Self Client option here 
+ https://www.zoho.com/crm/developer/docs/api/v2/auth-request.html
 
 `-e`: email of CRM user
 
@@ -53,12 +51,19 @@ To use not 80 port you will need to do additional proxy server set up.
 
 `-logmode`: mode of logging handling. To enable logging to console pass 'console'. By default it's 'file'
 
-`-logpath`: path of storing logs. By dafault it's script path + 'logs' directory.
+`-logpath`: path of storing logs. By default it's script path + 'logs' directory.
 
 `-ngrok`: your ngrok token from https://dashboard.ngrok.com/login
 
 `-debug`: parameter without value. Enable to show debug level logs.
 
 
-For the very first time you will need to specify grant token `-ga`. How to generate it
-follow instruction for Self Client option here https://www.zoho.com/crm/developer/docs/api/v2/auth-request.html.
+
+After ending, in `ga_zoho_integration` folder created `Settings.ini` file with all your data. So next time u have not to input all of them
+
+
+# Run The Script
+
+Just run `main.py` file.
+
+
