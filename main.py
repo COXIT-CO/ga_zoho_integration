@@ -1,11 +1,12 @@
 # pylint: disable=import-error
+# pylint: disable=relative-import
 """Python script which integrates Zoho CRM deals data with google analytics"""
 from threading import Timer
 from logging import getLogger
 from flask import Flask, request, Response
-from ga_zoho_integration.config import AppConfig
-from ga_zoho_integration.apis.zoho_api import ZohoAPI
-from ga_zoho_integration.apis.ga_api import GaAPI
+from config import AppConfig
+from apis.zoho_api import ZohoAPI
+from apis.ga_api import GaAPI
 
 APP = Flask(__name__)
 CONFIGS = AppConfig()
