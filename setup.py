@@ -1,3 +1,5 @@
+""" It's the setup file for the ga_zoho_integration project.
+    This file creates a config file further """
 import sys
 import argparse
 import configparser
@@ -53,8 +55,8 @@ def initialize_variables():
 
 if __name__ == '__main__':
     if path.isfile(CONFIG_FILE):
-        key = raw_input("Do you really wanna change your settings?(y/n) ")
-        if key == "y":
+        KEY = raw_input("Do you really wanna change your settings?(y/n) ")
+        if KEY == "y":
             initialize_variables()
         else:
             sys.exit("Script is terminated")

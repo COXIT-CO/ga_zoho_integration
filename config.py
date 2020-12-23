@@ -1,13 +1,12 @@
 # pylint: disable=import-error
 """Configuration module for logging"""
-import argparse
 import errno
 import logging
 import logging.handlers
 import configparser
 from os import makedirs, symlink
 from pyngrok import ngrok
-from setup import CONFIG_FILE
+from ga_zoho_integration.setup import CONFIG_FILE
 
 class AppConfig(object):
     """Class for configuring app"""
