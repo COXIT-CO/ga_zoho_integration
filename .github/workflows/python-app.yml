@@ -5,9 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, ga_zoho-2.0 ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, ga_zoho-2.0 ]
 
 jobs:
   build:
@@ -33,4 +33,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest `ls -R|grep .py$|xargs`
+        find . -type f -name “*tests/*.py” | xargs pytest
