@@ -10,7 +10,7 @@ import requests
 from requests import RequestException
 import zcrmsdk as zoho_crm
 import pytz
-from setup import CONFIG_FILE
+from ..setup import CONFIG_FILE
 
 LOGGER = getLogger('app')
 
