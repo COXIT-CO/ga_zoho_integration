@@ -5,4 +5,5 @@ zcrmsdk==2.0.11
 pytz==2020.4
 pyngrok==4.2.2
 pytest==4.6.11
-
+pytest-cov==2.6.1
+coveralls==1.6.0

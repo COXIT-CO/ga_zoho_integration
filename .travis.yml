@@ -4,4 +4,6 @@ python:
 install:
   - pip install -r requirements.txt
 script:
-  - pytest
+  — pytest --cov=ga_zoho_integration
+after_success:
+  — coveralls

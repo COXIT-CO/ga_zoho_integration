@@ -1,3 +1,6 @@
+[![Build Status](https://www.travis-ci.com/COXIT-CO/ga_zoho_integration.svg?branch=issue_65)](https://www.travis-ci.com/COXIT-CO/ga_zoho_integration)
+
+
 # ga_zoho_integration
 Python script which integrates Zoho CRM Deals data with Google Analytics
 sending event hits to Google Analytics property.
@@ -34,7 +37,7 @@ from Zoho CRM
 When you clone this repo and want to start programme:
 First of all u have to run 'setup.py' file with parameters:
 
-`-gt`: grant token, how to generate it follow instruction for Self Client option here 
+`-gt`: grant token, how to generate it follow instruction for Self Client option here
  https://www.zoho.com/crm/developer/docs/api/v2/auth-request.html
 
 `-e`: email of CRM user
@@ -65,5 +68,3 @@ After ending, in `ga_zoho_integration` folder created `Settings.ini` file with a
 # Run The Script
 
 Just run `main.py` file.
-
-
