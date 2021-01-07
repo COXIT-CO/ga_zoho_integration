@@ -5,9 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, ga_zoho-2.0 ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, ga_zoho-2.0 ]
 
 jobs:
   build:
