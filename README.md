@@ -1,4 +1,7 @@
 # ga_zoho_integration
+
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/f026a1400393401bbd66e8de8479b5ca)](https://app.codacy.com/gh/COXIT-CO/ga_zoho_integration?utm_source=github.com&utm_medium=referral&utm_content=COXIT-CO/ga_zoho_integration&utm_campaign=Badge_Grade)
+
 Python script which integrates Zoho CRM Deals data with Google Analytics
 sending event hits to Google Analytics property.
 
