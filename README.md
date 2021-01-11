@@ -1,5 +1,5 @@
 [![Build Status](https://www.travis-ci.com/COXIT-CO/ga_zoho_integration.svg?branch=issue_65)](https://www.travis-ci.com/COXIT-CO/ga_zoho_integration)
-
+[![Coverage Status](https://coveralls.io/repos/github/COXIT-CO/ga_zoho_integration/badge.svg?branch=issue_65)](https://coveralls.io/github/COXIT-CO/ga_zoho_integration?branch=issue_65)
 
 # ga_zoho_integration
 Python script which integrates Zoho CRM Deals data with Google Analytics
