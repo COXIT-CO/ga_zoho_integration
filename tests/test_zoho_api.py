@@ -1,4 +1,4 @@
-"""This file tests ZohoAPI class."""
+"""Tests for ZohoAPI class."""
 import logging
 from mock import patch, Mock # pylint: disable=import-error
 from ..apis.zoho_api import ZohoAPI
