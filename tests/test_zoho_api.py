@@ -1,4 +1,4 @@
-""" This file tests ZohoAPI class """
+"""This file tests ZohoAPI class."""
 import logging
 from mock import patch, Mock # pylint: disable=import-error
 from ..apis.zoho_api import ZohoAPI
@@ -7,7 +7,7 @@ from ..config import AppConfig
 
 @patch("ga_zoho_integration.apis.zoho_api.ZohoAPI.__init__")
 def test_init_zoho(mock_init):
-    """Test checks if __init__ function is called"""
+    """Test checks if __init__ function is called."""
     api_config = Mock(spec=AppConfig)
     mock_init.return_value = None
     ZohoAPI(api_config)
@@ -15,7 +15,7 @@ def test_init_zoho(mock_init):
 
 
 def test_make_input_json():
-    """Test checks make_input_json function"""
+    """Test checks make_input_json function."""
     zoho_api = Mock(spec=ZohoAPI)
     zoho_api.notify_url = 'test.com'
     result = ZohoAPI.make_input_json(zoho_api)
@@ -23,7 +23,7 @@ def test_make_input_json():
 
 
 def test_enable_notifications():
-    """Test checks if runs refresh_access_token function"""
+    """Test checks if runs refresh_access_token function."""
     zoho_api = Mock(spec=ZohoAPI)
     try:
         ZohoAPI.enable_notifications(zoho_api)
@@ -34,7 +34,7 @@ def test_enable_notifications():
 
 
 def test_raise_refresh_token_error(caplog):
-    """Test checks raising log error when access token is not valid"""
+    """Test checks raising log error when access token is not valid."""
     zoho_api = Mock(spec=ZohoAPI)
     zoho_api.login_email = "test_raise_exception@gmail.com"
 
@@ -45,7 +45,7 @@ def test_raise_refresh_token_error(caplog):
 
 
 def test_raise_get_response_error(caplog):
-    """Test checks raising log error when cannot get access to Zoho"""
+    """Test checks raising log error when cannot get access to Zoho."""
     zoho_api = Mock(spec=ZohoAPI)
     zoho_api.api_base_url = "test@gmail.com"
     zoho_api.access_token = "test_token"
